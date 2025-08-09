@@ -52,9 +52,6 @@ const onLogout = () => {
   setError('');
   localStorage.removeItem('isAuthed');
   localStorage.removeItem('profile');
-  
-  // --- CHANGE 3: Clear the cart on logout ---
-  localStorage.removeItem('cart');
 };
 
 
