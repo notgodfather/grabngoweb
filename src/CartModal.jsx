@@ -1,7 +1,6 @@
 import React from 'react';
 import { formatPrice } from './types';
 
-// The function signature now accepts the 'isCheckingOut' prop
 export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout, isCheckingOut }) {
   const cartArray = Object.values(cart);
   const total = cartArray.reduce((sum, ci) => sum + Number(ci.item.price) * ci.qty, 0);

@@ -1,42 +1,143 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+/* Global Styles */
+body {
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  background: #f8fafc;
+  color: #111827;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* Hero Section */
+.hero {
+  background: linear-gradient(135deg, #2563eb, #16a34a);
+  color: white;
+  padding: 5rem 2rem;
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  position: relative;
+  overflow: hidden;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('https://www.transparenttextures.com/patterns/food.png');
+  opacity: 0.05;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.hero-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  z-index: 1;
+  position: relative;
 }
 
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.15);
+  padding: 0.4rem 1rem;
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+
+.hero h1 {
+  font-size: 3rem;
+  margin: 1rem 0;
+  line-height: 1.2;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.cta {
+  margin-top: 1.5rem;
+  background: #facc15;
+  color: #1f2937;
+  font-weight: 600;
+  padding: 0.8rem 1.6rem;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.25s ease, background 0.3s ease;
+}
+
+.cta:hover {
+  background: #eab308;
+  transform: translateY(-2px);
+}
+
+/* Glassmorphic Login Card */
 .card {
-  padding: 2em;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(12px);
+  border-radius: 1.2rem;
+  padding: 2.5rem;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+  max-width: 420px;
+  margin: 3rem auto;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
-.read-the-docs {
-  color: #888;
+.card-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.app-avatar {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.card-title {
+  font-weight: 700;
+  font-size: 1.6rem;
+}
+
+.card-subtitle {
+  color: #4b5563;
+  font-size: 0.95rem;
+}
+
+/* Google Button */
+.google-btn {
+  display: flex;
+  justify-content: center;
+}
+
+.google-btn button {
+  border-radius: 0.5rem !important;
+  padding: 0.6rem 1rem !important;
+  font-weight: 500;
+}
+
+/* Profile Section */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  background: #f1f5f9;
+  box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .hero-inner {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
 }
