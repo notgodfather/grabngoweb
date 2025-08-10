@@ -22,7 +22,6 @@ export default function App() {
 
       const allowed =
         email.endsWith('@bmsce.ac.in') || email.endsWith('.bmsce.ac.in')|| email=="rahulranjan5sep@gmail.com" || email.endsWith('@gmail.com');
-        email.endsWith('@bmsce.ac.in') || email.endsWith('.bmsce.ac.in')|| email=="rahulranjan5sep@gmail.com";
 
       if (allowed) {
         setProfile(decoded);
