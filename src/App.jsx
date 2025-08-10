@@ -21,6 +21,7 @@ export default function App() {
       const email = (decoded.email || '').toLowerCase();
 
       const allowed =
+        email.endsWith('@bmsce.ac.in') || email.endsWith('.bmsce.ac.in')|| email=="rahulranjan5sep@gmail.com" || email.endsWith('@gmail.com');
         email.endsWith('@bmsce.ac.in') || email.endsWith('.bmsce.ac.in')|| email=="rahulranjan5sep@gmail.com";
 
       if (allowed) {
