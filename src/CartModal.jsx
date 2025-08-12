@@ -4,49 +4,36 @@ import { formatPrice } from './types';
 export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout, isCheckingOut }) {
   const cartArray = Object.values(cart);
   const total = cartArray.reduce((sum, ci) => sum + Number(ci.item.price) * ci.qty, 0);
-
-  // --- CHANGE 1: Add state to control the slide-in/out animation ---
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // When the component mounts, trigger the slide-in animation
     const timer = setTimeout(() => {
       setIsVisible(true);
-    }, 10); // A tiny delay ensures the transition is applied
+    }, 10);
     return () => clearTimeout(timer);
   }, []);
-
-  // --- CHANGE 2: Create a new close handler for the slide-out animation ---
   const handleClose = () => {
     setIsVisible(false);
-    // Wait for the animation to finish before calling the parent's onClose
-    setTimeout(onClose, 300); // This duration should match the transition time
+    setTimeout(onClose, 300); 
   };
-
-  // --- CHANGE 3: Apply new styles and animation state to the modal ---
   const dynamicContentStyle = {
     ...modalContentStyle,
     transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
   };
 
   return (
-    // The backdrop now only darkens the background and handles the close action
     <div
       style={modalBackdropStyle}
       onClick={handleClose}
     >
-      {/* The content is now a side drawer with its own styles and animation */}
       <div
         style={dynamicContentStyle}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* The header of the cart drawer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #e2e8f0' }}>
           <h2 style={{ margin: 0, fontSize: '1.2rem' }}>Your Cart</h2>
           <button onClick={handleClose} style={closeButtonStyle}>&times;</button>
         </div>
-
-        {/* The list of cart items */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px' }}>
           {cartArray.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#64748b', marginTop: 40 }}>Your cart is empty.</p>
@@ -67,8 +54,6 @@ export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout,
             ))
           )}
         </div>
-
-        {/* The footer with the total and checkout button */}
         {cartArray.length > 0 && (
           <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -88,9 +73,6 @@ export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout,
     </div>
   );
 }
-
-// --- CHANGE 4: Updated styles for the new side drawer design ---
-
 const modalBackdropStyle = {
   position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
   backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -104,12 +86,12 @@ const modalContentStyle = {
   right: 0,
   bottom: 0,
   width: '100%',
-  maxWidth: 420, // A good width for a side panel
+  maxWidth: 420, 
   background: '#fff',
   boxShadow: '-5px 0 25px rgba(0,0,0,0.1)',
   transition: 'transform 0.3s ease-in-out',
   display: 'flex',
-  flexDirection: 'column', // Organize content vertically
+  flexDirection: 'column',
 };
 
 const closeButtonStyle = {
@@ -123,6 +105,6 @@ const quantityButtonStyle = {
 const placeOrderButtonStyle = {
   background: '#f97316', color: '#fff', border: 0, padding: '14px 20px',
   borderRadius: 12, fontWeight: 600, cursor: 'pointer',
-  width: '100%', // Make button full-width
+  width: '100%',
   fontSize: '1rem'
 };

@@ -43,9 +43,6 @@ export default function App() {
     console.error('Google login failed', err);
     setError('Google login failed. Please try again.');
   };
-
-  // In src/App.jsx
-
 const onLogout = () => {
   googleLogout();
   setProfile(null);
@@ -72,7 +69,6 @@ const onLogout = () => {
 
   return (
     <>
-      {/* Hero section */}
       <section className="hero">
         <div className="hero-inner">
           <div>
@@ -87,7 +83,6 @@ const onLogout = () => {
             </button>
           </div>
           <div style={{ justifySelf: 'end' }}>
-            {/* Placeholder overlapping plates */}
             <div style={{ position: 'relative', height: 160, width: 260 }}>
               <div style={{ position: 'absolute', right: 0, top: 0, width: 150, height: 150, borderRadius: '50%', background: '#e2f5e8' }} />
               <div style={{ position: 'absolute', right: 60, top: 40, width: 120, height: 120, borderRadius: '50%', background: '#fde68a' }} />
@@ -96,8 +91,6 @@ const onLogout = () => {
           </div>
         </div>
       </section>
-
-      {/* Content area with login card */}
       <section className="content">
         <div className="center">
           <div id="login-card" className="card">
@@ -111,12 +104,9 @@ const onLogout = () => {
 
             {!profile ? (
               <>
-                {/* Visible Google button */}
                 <div className="google-btn">
                   <GoogleLogin onSuccess={onSuccess} onError={onError} />
                 </div>
-
-                {/* Hidden Google button for programmatic trigger */}
                 <div id="hidden-google" style={{ height: 0, overflow: 'hidden' }}>
                   <GoogleLogin onSuccess={onSuccess} onError={onError} />
                 </div>

@@ -178,20 +178,11 @@ export default function Home() {
     </div>
   );
 }
-
-// --- Redesigned Header Component ---
-
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
-  // Safely get the first name. If profile.name is "John Doe", this gets "John".
-  // If profile is null or has no name, it gracefully defaults to an empty string.
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
 
   return (
     <div>
-      {/* 
-        This is the new personalized greeting section. 
-        It only renders if we successfully got a first name.
-      */}
       {firstName && (
         <div style={greetingContainerStyle}>
           <h1 style={greetingHeadingStyle}>
@@ -200,10 +191,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
           <p style={subheadingStyle}>What are you craving today?</p>
         </div>
       )}
-
-      {/* The original header bar with the title, search, and cart button */}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        {/* If the user is logged in, we can hide the generic "GrabNGo Menu" title */}
         {!firstName && <h2 style={{ margin: 0, marginRight: 'auto' }}>GrabNGo Menu</h2>}
         
         <input
@@ -223,10 +211,6 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
     </div>
   );
 }
-
-
-// --- All Child Components and Styles ---
-
 const greetingContainerStyle = {
   marginBottom: 24,
 };

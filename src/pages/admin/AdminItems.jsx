@@ -2,18 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatPrice } from '../../types';
 
-// --- Main Component for Managing Food Items ---
 export default function AdminItems() {
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // State for the form/modal
   const [isModalOpen, setModalOpen] = useState(false);
-  const [currentItem, setCurrentItem] = useState(null); // null for new, item object for editing
+  const [currentItem, setCurrentItem] = useState(null); 
 
-  // Fetch both items and categories
   const fetchData = async () => {
     setLoading(true);
     const [itemRes, catRes] = await Promise.all([
@@ -51,7 +48,7 @@ export default function AdminItems() {
         alert(`Error: ${error.message}`);
       } else {
         alert('Item deleted successfully.');
-        fetchData(); // Refresh the list
+        fetchData();
       }
     }
   };
@@ -109,7 +106,6 @@ export default function AdminItems() {
   );
 }
 
-// --- Form Modal Component ---
 function ItemFormModal({ item, categories, onClose, onSave }) {
   const [formData, setFormData] = useState({
     name: item?.name || '',
@@ -202,8 +198,6 @@ function ItemFormModal({ item, categories, onClose, onSave }) {
   );
 }
 
-
-// --- Styles ---
 const primaryButtonStyle = { background: '#f97316', color: '#fff', border: 0, padding: '10px 16px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' };
 const secondaryButtonStyle = { background: '#e2e8f0', color: '#1e293b', border: 0, padding: '10px 16px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' };
 const editButtonStyle = { background: '#dbeafe', color: '#1e40af', border: 'none', padding: '6px 10px', borderRadius: 6, cursor: 'pointer', marginRight: 8 };

@@ -9,8 +9,6 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // --- UPDATED: Moved fetch logic into a useCallback hook ---
-  // This allows us to safely use it in useEffect and other handlers.
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
@@ -33,26 +31,21 @@ export default function AdminOrders() {
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
-  // --- UPDATED: handleStatusUpdate now performs an optimistic update ---
   const handleStatusUpdate = async (orderId, newStatus) => {
-    // 1. Update the UI instantly for a better user experience.
     setOrders(currentOrders =>
       currentOrders.map(order =>
         order.id === orderId ? { ...order, status: newStatus } : order
       )
     );
 
-    // 2. Send the update request to the database.
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
       .eq('id', orderId);
 
-    // 3. If the database update fails, show an error and refresh the data
-    // to revert the optimistic change.
     if (error) {
       alert(`Error updating status: ${error.message}`);
-      fetchOrders(); // Re-fetch to get the true state from the database
+      fetchOrders();
     }
   };
 
@@ -117,9 +110,6 @@ export default function AdminOrders() {
     </div>
   );
 }
-
-// --- Styles for the Admin Orders page ---
-
 const orderCardStyle = {
   background: '#fff',
   border: '1px solid #eef2f7',

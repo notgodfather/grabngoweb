@@ -1,5 +1,3 @@
-// In src/OrderHistory.jsx
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
@@ -11,7 +9,6 @@ export default function OrderHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setErr] = useState('');
 
-  // --- UPDATED: Using a function to fetch data for reuse ---
   const fetchUserOrders = async () => {
     const { data, error } = await supabase
       .from('orders')
@@ -27,9 +24,6 @@ export default function OrderHistory() {
     }
     setLoading(false);
   };
-
-  // In src/OrderHistory.jsx
-
 useEffect(() => {
   const fetchUserOrders = async () => {
     const { data, error } = await supabase
@@ -111,8 +105,6 @@ useEffect(() => {
     </div>
   );
 }
-
-// --- Style for the status pill ---
 const userStatusPillStyle = (status) => ({
     padding: '4px 10px',
     borderRadius: 999,
