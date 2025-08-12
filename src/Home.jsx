@@ -3,7 +3,6 @@ import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
 
-
 export default function Home() {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
   
@@ -14,9 +13,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isCartOpen, setCartOpen] = useState(false);
-  // --- CHANGE 1: Add state to track the checkout process ---
   const [isCheckingOut, setCheckingOut] = useState(false);
-
 
   const [cart, setCart] = useState(() => {
     try {
@@ -28,12 +25,9 @@ export default function Home() {
     }
   });
 
-
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
-
-
 
   useEffect(() => {
     let isMounted = true;
@@ -45,9 +39,7 @@ export default function Home() {
         supabase.from('food_items').select('*').eq('is_available', true).order('name', { ascending: true })
       ]);
 
-
       if (!isMounted) return;
-
 
       if (catRes.error) setError(catRes.error.message);
       else if (itemRes.error) setError(itemRes.error.message);
@@ -61,7 +53,6 @@ export default function Home() {
     return () => { isMounted = false; };
   }, []);
 
-
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
     return items.filter((it) => {
@@ -71,12 +62,10 @@ export default function Home() {
     });
   }, [items, search, activeCat]);
 
-
   const updateCartQuantity = (item, direction) => {
     setCart((c) => {
       const currentQty = c[item.id]?.qty || 0;
       const newQty = currentQty + direction;
-
 
       if (newQty <= 0) {
         const clone = { ...c };
@@ -87,12 +76,9 @@ export default function Home() {
     });
   };
 
-
   const cartArray = Object.values(cart);
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
-
-  // --- CHANGE 2: Replace the direct order placement with the Razorpay payment flow ---
   const handleCheckout = async () => {
     if (!profile?.sub) {
       alert('You must be logged in to place an order.');
@@ -105,10 +91,9 @@ export default function Home() {
     try {
       const { data, error } = await supabase.functions.invoke('create-payment-order', {
         body: {
-          amount: cartTotal * 100, // Amount in paisa
+          amount: cartTotal * 100,
           currency: 'INR',
           notes: {
-            // This data will be passed to the webhook for final order creation
             custom_data: JSON.stringify({ cart, profile })
           }
         }
@@ -124,11 +109,9 @@ export default function Home() {
         description: 'Food Order Payment',
         order_id: data.id,
         handler: function (response) {
-          // This runs on successful payment
           alert('Payment successful! Your order has been placed.');
           setCart({});
           setCartOpen(false);
-          // Note: We don't need to setCheckingOut(false) here because the component unmounts
         },
         prefill: {
           name: profile.name || '',
@@ -136,7 +119,6 @@ export default function Home() {
         },
         theme: { color: '#f97316' },
         modal: {
-            // This runs if the user closes the payment modal
             ondismiss: function() {
                 setCheckingOut(false);
             }
@@ -152,20 +134,18 @@ export default function Home() {
     }
   };
 
-
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
       <Header
+        profile={profile}
         search={search}
         onSearchChange={setSearch}
         cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
         onViewCart={() => setCartOpen(true)}
       />
 
-
       {loading && <p>Loading menu...</p>}
       {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
-
 
       {!loading && (
         <>
@@ -183,7 +163,6 @@ export default function Home() {
         </>
       )}
 
-
       {isCartOpen && (
         <CartModal
           cart={cart}
@@ -193,7 +172,6 @@ export default function Home() {
             if (item) updateCartQuantity(item, direction);
           }}
           onCheckout={handleCheckout}
-          // --- CHANGE 3: Pass the new state down to the cart modal ---
           isCheckingOut={isCheckingOut}
         />
       )}
@@ -201,27 +179,83 @@ export default function Home() {
   );
 }
 
+// --- Redesigned Header Component ---
 
+function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
+  // Safely get the first name. If profile.name is "John Doe", this gets "John".
+  // If profile is null or has no name, it gracefully defaults to an empty string.
+  const firstName = profile?.name ? profile.name.split(' ')[0] : '';
 
-// --- YOUR STYLED CHILD COMPONENTS ARE PRESERVED EXACTLY AS YOU PROVIDED THEM ---
-
-
-function Header({ search, onSearchChange, cartCount, onViewCart }) {
   return (
-    <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 18 }}>
-      <h2 style={{ margin: 0, marginRight: 'auto' }}>GrabNGo Menu</h2>
-      <input
-        placeholder="Search for food..."
-        value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
-        style={{ padding: 10, width: 360, maxWidth: '45vw', borderRadius: 10, border: '1px solid #e2e8f0' }}
-      />
-      <button onClick={onViewCart} style={viewCartButtonStyle}>
-        🛒 Cart ({cartCount})
-      </button>
+    <div>
+      {/* 
+        This is the new personalized greeting section. 
+        It only renders if we successfully got a first name.
+      */}
+      {firstName && (
+        <div style={greetingContainerStyle}>
+          <h1 style={greetingHeadingStyle}>
+            👋 Hello, <span style={nameStyle}>{firstName}</span>
+          </h1>
+          <p style={subheadingStyle}>What are you craving today?</p>
+        </div>
+      )}
+
+      {/* The original header bar with the title, search, and cart button */}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        {/* If the user is logged in, we can hide the generic "GrabNGo Menu" title */}
+        {!firstName && <h2 style={{ margin: 0, marginRight: 'auto' }}>GrabNGo Menu</h2>}
+        
+        <input
+          placeholder="Search for food..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          style={{ 
+            ...searchInputStyle, 
+            marginLeft: firstName ? 0 : 'auto', 
+            width: firstName ? '100%' : 360 
+          }}
+        />
+        <button onClick={onViewCart} style={viewCartButtonStyle}>
+          🛒 Cart ({cartCount})
+        </button>
+      </div>
     </div>
   );
 }
+
+
+// --- All Child Components and Styles ---
+
+const greetingContainerStyle = {
+  marginBottom: 24,
+};
+
+const greetingHeadingStyle = {
+  margin: '0 0 4px 0',
+  fontSize: '2rem',
+  fontWeight: 600,
+  color: '#1e293b',
+};
+
+const nameStyle = {
+  fontWeight: 700,
+  color: '#f97316',
+};
+
+const subheadingStyle = {
+  margin: 0,
+  fontSize: '1.1rem',
+  color: '#64748b',
+};
+
+const searchInputStyle = {
+  padding: 10,
+  maxWidth: '45vw',
+  borderRadius: 10,
+  border: '1px solid #e2e8f0',
+  transition: 'all 0.2s ease-in-out',
+};
 
 
 function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
@@ -265,12 +299,11 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
         })}
       </div>
     );
-  }
-
+}
 
 function CategoryBar({ categories, activeCategory, onCategoryChange }) {
   return (
-    <div style={{ display: 'flex', gap: 10, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
+    <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
       <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} />
       {categories.map((c) => (
         <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} />
@@ -278,7 +311,6 @@ function CategoryBar({ categories, activeCategory, onCategoryChange }) {
     </div>
   );
 }
-
 
 function CategoryPill({ label, active, onClick }) {
   return (
@@ -300,16 +332,13 @@ function CategoryPill({ label, active, onClick }) {
   );
 }
 
-
 const viewCartButtonStyle = {
   padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600
 };
 
-
 const addToCartButtonStyle = {
   padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600
 };
-
 
 const quantityButtonStyle = {
   width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem'
