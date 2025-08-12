@@ -5,7 +5,7 @@ import CartModal from './CartModal';
 
 export default function Home() {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
-  
+
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [search, setSearch] = useState('');
@@ -100,7 +100,7 @@ export default function Home() {
       });
 
       if (error) throw error;
-      
+
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
         amount: data.amount,
@@ -119,12 +119,12 @@ export default function Home() {
         },
         theme: { color: '#f97316' },
         modal: {
-            ondismiss: function() {
-                setCheckingOut(false);
-            }
+          ondismiss: function () {
+            setCheckingOut(false);
+          }
         }
       };
-      
+
       const rzp = new window.Razorpay(options);
       rzp.open();
 
@@ -193,15 +193,15 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
       )}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
         {!firstName && <h2 style={{ margin: 0, marginRight: 'auto' }}>GrabNGo Menu</h2>}
-        
+
         <input
-          placeholder="Search for food..."
+          placeholder="Search for food...(menu will be updated according to college canteen this is just demo menu)"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          style={{ 
-            ...searchInputStyle, 
-            marginLeft: firstName ? 0 : 'auto', 
-            width: firstName ? '100%' : 360 
+          style={{
+            ...searchInputStyle,
+            marginLeft: firstName ? 0 : 'auto',
+            width: firstName ? '100%' : 360
           }}
         />
         <button onClick={onViewCart} style={viewCartButtonStyle}>
@@ -243,46 +243,46 @@ const searchInputStyle = {
 
 
 function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
-    if (items.length === 0) {
-      return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
-    }
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
-        {items.map((item) => {
-          const cartItem = cart[item.id];
-          const quantityInCart = cartItem?.qty || 0;
-          return (
-            <div key={item.id} style={{ border: '1px solid #eef2f7', borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-              <div style={{ height: 180, background: '#f1f5f9' }}>
-                {item.image_url && (
-                  <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                )}
+  if (items.length === 0) {
+    return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
+  }
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
+      {items.map((item) => {
+        const cartItem = cart[item.id];
+        const quantityInCart = cartItem?.qty || 0;
+        return (
+          <div key={item.id} style={{ border: '1px solid #eef2f7', borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
+            <div style={{ height: 180, background: '#f1f5f9' }}>
+              {item.image_url && (
+                <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+            </div>
+            <div style={{ padding: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div>
+              <div style={{ color: '#64748b', fontSize: 14, height: 40, overflow: 'hidden', marginTop: 4 }}>
+                {item.description || 'A delicious and freshly prepared item.'}
               </div>
-              <div style={{ padding: 14 }}>
-                <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div>
-                <div style={{ color: '#64748b', fontSize: 14, height: 40, overflow: 'hidden', marginTop: 4 }}>
-                  {item.description || 'A delicious and freshly prepared item.'}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', marginTop: 12 }}>
-                  <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div>
-                  <div style={{ marginLeft: 'auto' }}>
-                    {quantityInCart > 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
-                        <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{quantityInCart}</span>
-                        <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button>
-                    )}
-                  </div>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: 12 }}>
+                <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div>
+                <div style={{ marginLeft: 'auto' }}>
+                  {quantityInCart > 0 ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
+                      <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{quantityInCart}</span>
+                      <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button>
+                  )}
                 </div>
               </div>
             </div>
-          );
-        })}
-      </div>
-    );
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function CategoryBar({ categories, activeCategory, onCategoryChange }) {
