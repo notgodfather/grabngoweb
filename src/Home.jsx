@@ -2,12 +2,16 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
+import TrendingFeed from './TrendingFeed';
+
 
 export default function Home() {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
 
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
+  const [trendingItems, setTrendingItems] = useState([]);
+
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -34,19 +38,35 @@ export default function Home() {
     async function loadData() {
       setLoading(true);
       setError('');
-      const [catRes, itemRes] = await Promise.all([
+      
+      const [catRes, itemRes, trendRes] = await Promise.all([
         supabase.from('categories').select('*').eq('is_available', true).order('display_order', { ascending: true }),
-        supabase.from('food_items').select('*').eq('is_available', true).order('name', { ascending: true })
+        supabase.from('food_items').select('*').eq('is_available', true).order('name', { ascending: true }),
+        supabase.rpc('get_trending_items')
       ]);
 
       if (!isMounted) return;
 
-      if (catRes.error) setError(catRes.error.message);
-      else if (itemRes.error) setError(itemRes.error.message);
-      else {
-        setCategories(catRes.data || []);
-        setItems(itemRes.data || []);
+      if (catRes.error) {
+        setError(catRes.error.message);
+        setLoading(false);
+        return; 
       }
+      if (itemRes.error) {
+        setError(itemRes.error.message);
+        setLoading(false);
+        return;
+      }
+
+      setCategories(catRes.data || []);
+      setItems(itemRes.data || []);
+
+      if (trendRes.error) {
+        console.error("Could not fetch trending items:", trendRes.error.message);
+      } else {
+        setTrendingItems(trendRes.data || []);
+      }
+
       setLoading(false);
     }
     loadData();
@@ -128,7 +148,7 @@ export default function Home() {
       const rzp = new window.Razorpay(options);
       rzp.open();
 
-    } catch (err) {
+    } catch (err) { // <<< THE FIX IS HERE. ADDED { AND }
       alert(`Payment failed: ${err.message}`);
       setCheckingOut(false);
     }
@@ -149,6 +169,7 @@ export default function Home() {
 
       {!loading && (
         <>
+          <TrendingFeed items={trendingItems} />
           <CategoryBar
             categories={categories}
             activeCategory={activeCat}
@@ -178,6 +199,9 @@ export default function Home() {
     </div>
   );
 }
+
+// --- All other components and styles remain unchanged below ---
+
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
 
@@ -211,119 +235,29 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
     </div>
   );
 }
-const greetingContainerStyle = {
-  marginBottom: 24,
-};
 
-const greetingHeadingStyle = {
-  margin: '0 0 4px 0',
-  fontSize: '2rem',
-  fontWeight: 600,
-  color: '#1e293b',
-};
-
-const nameStyle = {
-  fontWeight: 700,
-  color: '#f97316',
-};
-
-const subheadingStyle = {
-  margin: 0,
-  fontSize: '1.1rem',
-  color: '#64748b',
-};
-
-const searchInputStyle = {
-  padding: 10,
-  maxWidth: '45vw',
-  borderRadius: 10,
-  border: '1px solid #e2e8f0',
-  transition: 'all 0.2s ease-in-out',
-};
-
+const greetingContainerStyle = { marginBottom: 24, };
+const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b', };
+const nameStyle = { fontWeight: 700, color: '#f97316', };
+const subheadingStyle = { margin: 0, fontSize: '1.1rem', color: '#64748b', };
+const searchInputStyle = { padding: 10, maxWidth: '45vw', borderRadius: 10, border: '1px solid #e2e8f0', transition: 'all 0.2s ease-in-out', };
 
 function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
   if (items.length === 0) {
     return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
   }
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}>
-      {items.map((item) => {
-        const cartItem = cart[item.id];
-        const quantityInCart = cartItem?.qty || 0;
-        return (
-          <div key={item.id} style={{ border: '1px solid #eef2f7', borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            <div style={{ height: 180, background: '#f1f5f9' }}>
-              {item.image_url && (
-                <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              )}
-            </div>
-            <div style={{ padding: 14 }}>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div>
-              <div style={{ color: '#64748b', fontSize: 14, height: 40, overflow: 'hidden', marginTop: 4 }}>
-                {item.description || 'A delicious and freshly prepared item.'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', marginTop: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div>
-                <div style={{ marginLeft: 'auto' }}>
-                  {quantityInCart > 0 ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
-                      <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{quantityInCart}</span>
-                      <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button>
-                    </div>
-                  ) : (
-                    <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
+  return ( <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20 }}> {items.map((item) => { const cartItem = cart[item.id]; const quantityInCart = cartItem?.qty || 0; return ( <div key={item.id} style={{ border: '1px solid #eef2f7', borderRadius: 14, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}> <div style={{ height: 180, background: '#f1f5f9' }}> {item.image_url && ( <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> )} </div> <div style={{ padding: 14 }}> <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div> <div style={{ color: '#64748b', fontSize: 14, height: 40, overflow: 'hidden', marginTop: 4 }}> {item.description || 'A delicious and freshly prepared item.'} </div> <div style={{ display: 'flex', alignItems: 'center', marginTop: 12 }}> <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div> <div style={{ marginLeft: 'auto' }}> {quantityInCart > 0 ? ( <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}> <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button> <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{quantityInCart}</span> <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button> </div> ) : ( <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button> )} </div> </div> </div> </div> ); })} </div> );
 }
 
 function CategoryBar({ categories, activeCategory, onCategoryChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
-      <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} />
-      {categories.map((c) => (
-        <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} />
-      ))}
-    </div>
-  );
+  return ( <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}> <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} /> {categories.map((c) => ( <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} /> ))} </div> );
 }
 
 function CategoryPill({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '8px 14px',
-        borderRadius: 999,
-        border: '1px solid #e2e8f0',
-        background: active ? '#f97316' : '#fff',
-        color: active ? '#fff' : '#0f172a',
-        cursor: 'pointer',
-        fontWeight: active ? 600 : 400,
-        whiteSpace: 'nowrap'
-      }}
-    >
-      {label}
-    </button>
-  );
+  return ( <button onClick={onClick} style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid #e2e8f0', background: active ? '#f97316' : '#fff', color: active ? '#fff' : '#0f172a', cursor: 'pointer', fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }} > {label} </button> );
 }
 
-const viewCartButtonStyle = {
-  padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600
-};
+const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600 };
+const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
+const quantityButtonStyle = { width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
 
-const addToCartButtonStyle = {
-  padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600
-};
-
-const quantityButtonStyle = {
-  width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem'
-};
