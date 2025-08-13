@@ -215,14 +215,17 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
           <p style={subheadingStyle}>What are you craving today?</p>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-        {!firstName && <h2 style={{ margin: 0, marginRight: 'auto' }}>GrabNGo Menu</h2>}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
+        {/* UPDATED: Uses a new style constant for a better look */}
+        {!firstName && <h2 style={headerTitleStyle}>GrabNGo</h2>}
+
         <input
-          placeholder="Search for food...(menu will be updated according to college canteen this is just demo menu)"
+          placeholder="Search for food..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           style={{
             ...searchInputStyle,
+            // Adjust margin based on whether the title or greeting is shown
             marginLeft: firstName ? 0 : 'auto',
             width: firstName ? '100%' : 360
           }}
@@ -234,6 +237,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
     </div>
   );
 }
+
 
 // UPDATED MenuGrid component
 function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
