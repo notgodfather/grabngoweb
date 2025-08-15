@@ -40,7 +40,6 @@ export default function Home() {
       
       const [catRes, itemRes, trendRes] = await Promise.all([
         supabase.from('categories').select('*').eq('is_available', true).order('display_order', { ascending: true }),
-        // UPDATED: Fetches all items, including unavailable ones
         supabase.from('food_items').select('*').order('name', { ascending: true }),
         supabase.rpc('get_trending_items')
       ]);
@@ -199,9 +198,6 @@ export default function Home() {
     </div>
   );
 }
-
-// --- Components and Styles ---
-
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
 
@@ -216,7 +212,6 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
         </div>
       )}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
-        {/* UPDATED: Uses a new style constant for a better look */}
         {!firstName && <h2 style={headerTitleStyle}>GrabNGo</h2>}
 
         <input
@@ -225,7 +220,6 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
           onChange={(e) => onSearchChange(e.target.value)}
           style={{
             ...searchInputStyle,
-            // Adjust margin based on whether the title or greeting is shown
             marginLeft: firstName ? 0 : 'auto',
             width: firstName ? '100%' : 360
           }}
@@ -239,7 +233,6 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
 }
 
 
-// UPDATED MenuGrid component
 function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
   if (items.length === 0) {
     return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
@@ -298,7 +291,6 @@ function CategoryPill({ label, active, onClick }) {
   return ( <button onClick={onClick} style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid #e2e8f0', background: active ? '#f97316' : '#fff', color: active ? '#fff' : '#0f172a', cursor: 'pointer', fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }} > {label} </button> );
 }
 
-// --- Style Constants ---
 const greetingContainerStyle = { marginBottom: 24, };
 const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b', };
 const nameStyle = { fontWeight: 700, color: '#f97316', };
@@ -309,7 +301,6 @@ const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1
 const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
 const quantityButtonStyle = { width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
 
-// ADDED new styles
 const menuItemStyle = { 
   border: '1px solid #eef2f7', 
   borderRadius: 14, 
