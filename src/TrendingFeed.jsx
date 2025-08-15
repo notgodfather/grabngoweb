@@ -1,12 +1,10 @@
 import React from 'react';
 
-// A simple icon to make the feed more visual
 const FireIcon = () => (
   <span style={{ fontSize: '1.2rem', marginRight: 8 }} role="img" aria-label="Trending">🔥</span>
 );
 
 export default function TrendingFeed({ items }) {
-  // If there are no trending items, don't render anything
   if (!items || items.length === 0) {
     return null;
   }
@@ -27,11 +25,9 @@ export default function TrendingFeed({ items }) {
   );
 }
 
-// --- Styles for the TrendingFeed component ---
 
 const containerStyle = {
-  // --- THIS IS THE CHANGE ---
-  marginTop: 24, // Adds space above this component
+  marginTop: 24,
   marginBottom: 28,
   padding: '16px 20px',
   background: 'linear-gradient(to right, #fff7ed, #fff1e1)',
