@@ -98,7 +98,7 @@ export default function Home() {
   const cartArray = Object.values(cart);
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
-  const handleCheckout = async () => {
+  cconst handleCheckout = async () => {
   if (!profile?.sub) {
     alert('You must be logged in to place an order.');
     return;
@@ -118,7 +118,7 @@ export default function Home() {
     console.log('Creating order with payload:', {
       amount: cartTotal,
       currency: 'INR',
-      cart,
+      cart: Object.values(cart),
       user: userDetails,
     });
 
@@ -128,7 +128,7 @@ export default function Home() {
       body: JSON.stringify({
         amount: cartTotal,
         currency: 'INR',
-        cart,
+        cart: Object.values(cart),  // Fix: convert cart object to array
         user: userDetails,
       }),
     });
@@ -172,6 +172,7 @@ export default function Home() {
     setCheckingOut(false);
   }
 };
+
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
