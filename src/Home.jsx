@@ -269,7 +269,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
             width: firstName ? '100%' : 360
           }}
         />
-        <button onClick={onViewCart} style={viewCartButtonStyle}>
+        <button onClick={onViewCart} style={cartCount==0 ? viewCartButtonStyle : filledCartButtonStyle}>
           🛒 Cart ({cartCount})
         </button>
       </div>
@@ -394,3 +394,4 @@ const outOfStockButtonStyle = {
   textAlign: 'center',
   fontWeight: 600,
 };
+const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
