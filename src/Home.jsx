@@ -109,10 +109,10 @@ export default function Home() {
 
   try {
     const userDetails = {
-      uid: profile?.sub || profile?.id || 'guest_' + Date.now(),
-      displayName: profile?.name || 'Guest',
-      email: profile?.email || 'noemail@example.com',
-      phoneNumber: profile?.phone || profile?.phoneNumber || '9999999999',
+      uid: profile.sub,
+      displayName: profile.name || 'Guest',
+      email: profile.email || 'noemail@example.com',
+      phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
     };
 
     // Step 1: Create Cashfree payment order
@@ -136,7 +136,6 @@ export default function Home() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
-    // Step 2: Perform Cashfree checkout
     if (!window.Cashfree) {
       alert('Cashfree SDK not loaded');
       setCheckingOut(false);
@@ -146,12 +145,13 @@ export default function Home() {
     const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
     const cashfree = window.Cashfree({ mode });
 
+    // Step 2: Start Cashfree payment
     await cashfree.checkout({
       paymentSessionId: data.paymentSessionId,
       redirectTarget: '_modal',
     });
 
-    // Step 3: Verify payment status
+    // Step 3: Verify payment status with backend
     const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -189,6 +189,8 @@ export default function Home() {
     setCheckingOut(false);
   }
 };
+
+
 
 
   return (
