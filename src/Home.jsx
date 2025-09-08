@@ -115,7 +115,7 @@ export default function Home() {
       phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
     };
 
-    // Step 1: Create Cashfree payment order
+    // Step 1: Create order with backend
     const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -136,6 +136,8 @@ export default function Home() {
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
+    console.log('Received create-order response:', data);
+
     if (!window.Cashfree) {
       alert('Cashfree SDK not loaded');
       setCheckingOut(false);
@@ -145,24 +147,30 @@ export default function Home() {
     const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
     const cashfree = window.Cashfree({ mode });
 
-    // Step 2: Start Cashfree payment
+    // Step 2: Checkout
     await cashfree.checkout({
       paymentSessionId: data.paymentSessionId,
       redirectTarget: '_modal',
     });
 
-    // Step 3: Verify payment status with backend
+    // Step 3: Verify payment using returned cfOrderId (or fallback to sentOrderId)
+    // Always try cfOrderId first as this is authoritative from Cashfree
+    const verifyOrderId = data.cfOrderId || data.sentOrderId;
+    console.log('Verifying payment with orderId:', verifyOrderId);
+
     const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: data.cfOrderId }),
+      body: JSON.stringify({ orderId: verifyOrderId }),
     });
 
     const verifyData = await verifyResponse.json();
     if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
 
+    console.log('Payment verification result:', verifyData);
+
     if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-      // Step 4: Record order in Supabase only after payment success
+      // Step 4: Record order only after payment success
       const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -170,7 +178,7 @@ export default function Home() {
           userId: profile.sub,
           userEmail: profile.email,
           cart: cartArray,
-          orderId: data.cfOrderId,
+          orderId: verifyOrderId,
         }),
       });
 
@@ -189,6 +197,7 @@ export default function Home() {
     setCheckingOut(false);
   }
 };
+
 
 
 
