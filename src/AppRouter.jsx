@@ -99,7 +99,7 @@ const navStyle = {
 const linkStyle = { 
   textDecoration: 'none', 
   color: '#334155', 
-  fontWeight: 'bold'
+  fontWeight: '400'
 };
 
 const adminLinkStyle = { 
