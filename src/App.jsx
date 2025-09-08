@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
-import { GoogleLogin, googleLogout } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
+import React, { useState, useEffect } from 'react';
+import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import './index.css';
+import ankitpic from './assets/ankitpic.jpeg';
+import arnavpic from './assets/arnavpic.jpeg';
+import shaswatpic from './assets/shaswatpic.jpeg';
+// Header Component
+const AppHeader = ({ onGetInTouch }) => (
+  <header className="app-header">
+    <div className="container header-container">
+      <div className="logo">GrabNGo</div>
+    </div>
+  </header>
+);
 
+// Main Application
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
@@ -11,133 +23,119 @@ export default function App() {
   const location = useLocation();
   const from = location.state?.from?.pathname || '/home';
 
-  const onSuccess = (res) => {
-    try {
-      if (!res?.credential) {
-        setError('Google login failed. Please try again.');
-        return;
-      }
-      const decoded = jwtDecode(res.credential);
-      const email = (decoded.email || '').toLowerCase();
+  const login = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        const userInfo = await axios.get(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+        );
 
-      const allowed =
-        email.endsWith('@bmsce.ac.in') || email.endsWith('.bmsce.ac.in')|| email=="rahulranjan5sep@gmail.com" || email.endsWith('@gmail.com');
+        const userData = userInfo.data;
+        const email = (userData.email || '').toLowerCase();
+        
+        const allowed =
+          email.endsWith('@bmsce.ac.in') ||
+          email.endsWith('.bmsce.ac.in') ||
+          email === 'rahulranjan5sep@gmail.com' ||
+          email.endsWith('@gmail.com');
 
-      if (allowed) {
-        setProfile(decoded);
-        setError('');
-        localStorage.setItem('isAuthed', 'true');
-        localStorage.setItem('profile', JSON.stringify(decoded));
-        navigate(from, { replace: true });
-      } else {
-        setProfile(null);
-        setError('Login with your College email..');
+        if (allowed) {
+          setProfile(userData);
+          setError('');
+          localStorage.setItem('isAuthed', 'true');
+          localStorage.setItem('profile', JSON.stringify(userData));
+          navigate(from, { replace: true });
+        } else {
+          setError('Please log in with a valid college email.');
+          googleLogout();
+          localStorage.clear();
+        }
+      } catch (err) {
+        setError('An error occurred during login.');
       }
-    } catch (e) {
-      console.error('Failed to decode ID token', e);
-      setError('Login failed. Please try again.');
+    },
+    onError: () => {
+      setError('Google login failed. Please try again later.');
+    },
+  });
+
+  useEffect(() => {
+    const storedProfile = localStorage.getItem('profile');
+    if (storedProfile) {
+      setProfile(JSON.parse(storedProfile));
     }
-  };
+  }, []);
 
-  const onError = (err) => {
-    console.error('Google login failed', err);
-    setError('Google login failed. Please try again.');
-  };
-const onLogout = () => {
-  googleLogout();
-  setProfile(null);
-  setError('');
-  localStorage.removeItem('isAuthed');
-  localStorage.removeItem('profile');
-};
-
-
-  const onOrderNow = () => {
-    const el = document.getElementById('login-card');
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-
-    const btn =
-      document.querySelector('#hidden-google .S9gUrf, #hidden-google div[role="button"], #hidden-google button');
-    if (btn) {
-      btn.click();
+  const handleLoginClick = () => {
+    if (profile) {
+      navigate(from, { replace: true });
     } else {
-      const visibleBtn =
-        document.querySelector('.google-btn') || document.getElementById('login-card');
-      if (visibleBtn) visibleBtn.scrollIntoView({ behavior: 'smooth' });
+      login();
     }
   };
 
   return (
-    <>
-      <section className="hero">
-        <div className="hero-inner">
-          <div>
-            <div className="badge">
-              <span style={{ width: 28, height: 28, display: 'grid', placeItems: 'center', borderRadius: 999, background: '#ffedd5' }}>🍽️</span>
-              GrabNGo
+    <div className="app-wrapper">
+      <AppHeader onGetInTouch={handleLoginClick} />
+      
+      <main className="hero-section">
+        <div className="container hero-container">
+          {/* Left Column */}
+          <div className="hero-text">
+            <h1>Quick Canteen <span className="highlight">Food Service</span></h1>
+            <p className="subtitle">Skip the lines and order the delicious food ahead.</p>
+            <div className="cta-buttons">
+              <button id="order-now-btn" className="btn btn-primary" onClick={handleLoginClick}>
+                Order Now
+              </button>
             </div>
-            <h1>Quick & Convenient Canteen Food Ordering</h1>
-            <p>Skip the lines and order ahead with GrabNGo. Fresh food ready when it’s needed.</p>
-            <button className="cta" onClick={onOrderNow}>
-              Order Now
-            </button>
+            {error && <p className="error-message">{error}</p>}
           </div>
-          <div style={{ justifySelf: 'end' }}>
-            <div style={{ position: 'relative', height: 160, width: 260 }}>
-              <div style={{ position: 'absolute', right: 0, top: 0, width: 150, height: 150, borderRadius: '50%', background: '#e2f5e8' }} />
-              <div style={{ position: 'absolute', right: 60, top: 40, width: 120, height: 120, borderRadius: '50%', background: '#fde68a' }} />
-              <div style={{ position: 'absolute', right: 120, top: 60, width: 100, height: 100, borderRadius: '50%', background: '#c7d2fe' }} />
+
+          {/* Right Column */}
+          <div className="hero-image-container">
+            <div className="image-wrapper">
+              <img
+                src="https://media.istockphoto.com/id/1829241109/photo/enjoying-a-brunch-together.jpg?s=612x612&w=0&k=20&c=9awLLRMBLeiYsrXrkgzkoscVU_3RoVwl_HA-OT-srjQ="
+                alt="Brunch"
+                className="hero-image"
+              />
+              <div className="shape shape-1"></div>
+              <div className="shape shape-2"></div>
+              <div className="shape shape-3"></div>
+              
+              {/* --- Floating Review Cards --- */}
+              <div className="floating-card card-1">
+                 <img src={ankitpic} alt="Ankit" />
+                 <div>
+                    <strong>Ankit</strong>
+                    <small>Veg Fried Maggie</small>
+                    <div className="stars">⭐⭐⭐⭐⭐</div>
+                 </div>
+              </div>
+
+              <div className="floating-card card-2">
+                 <img src={shaswatpic} alt="Shaswat" />
+                 <div>
+                    <strong>Shaswat</strong>
+                    <small>Loved the cold coffee!</small>
+                    <div className="stars">⭐⭐⭐⭐</div>
+                 </div>
+              </div>
+
+              <div className="floating-card card-3">
+                 <img src={arnavpic} alt="Arnav" />
+                 <div>
+                    <strong>Arnav</strong>
+                    <small>Goated Service</small>
+                    <div className="stars">⭐⭐⭐⭐⭐</div>
+                 </div>
+              </div>
             </div>
           </div>
         </div>
-      </section>
-      <section className="content">
-        <div className="center">
-          <div id="login-card" className="card">
-            <div className="card-header">
-              <div className="app-avatar">🍱</div>
-              <div className="card-title">Welcome to GrabNGo</div>
-              <div className="card-subtitle">
-                Order delicious meals from the campus canteen with just a few clicks.
-              </div>
-            </div>
-
-            {!profile ? (
-              <>
-                <div className="google-btn">
-                  <GoogleLogin onSuccess={onSuccess} onError={onError} />
-                </div>
-                <div id="hidden-google" style={{ height: 0, overflow: 'hidden' }}>
-                  <GoogleLogin onSuccess={onSuccess} onError={onError} />
-                </div>
-
-                {error && (
-                  <div style={{ marginTop: 12, color: '#b91c1c', fontWeight: 600 }}>
-                    {error}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div>
-                <div className="profile">
-                  <img src={profile.picture} alt="profile" width={48} height={48} />
-                  <div>
-                    <div style={{ fontWeight: 600 }}>{profile.name}</div>
-                    <div style={{ color: '#64748b', fontSize: 14 }}>{profile.email}</div>
-                  </div>
-                </div>
-                <button className="cta" style={{ marginTop: 16 }} onClick={onLogout}>
-                  Logout
-                </button>
-              </div>
-            )}
-
-            <div style={{ marginTop: 14, textAlign: 'center', color: '#94a3b8', fontSize: 12 }}>
-              By continuing, you agree to GrabNGo’s Terms of Service & Privacy Policy.
-            </div>
-          </div>
-        </div>
-      </section>
-    </>
+      </main>
+    </div>
   );
 }
