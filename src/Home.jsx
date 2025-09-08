@@ -99,59 +99,70 @@ export default function Home() {
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
   const handleCheckout = async () => {
-    if (!profile?.sub) {
-      alert('You must be logged in to place an order.');
+  if (!profile?.sub) {
+    alert('You must be logged in to place an order.');
+    return;
+  }
+  if (cartArray.length === 0) return;
+
+  setCheckingOut(true);
+
+  try {
+    // Call your Render backend API to create a Cashfree payment session
+    const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: cartTotal,       // Amount in INR rupees (not multiplied by 100)
+        currency: 'INR',
+        cart,
+        profile,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
+
+    if (!window.Cashfree) {
+      alert('Cashfree SDK not loaded');
+      setCheckingOut(false);
       return;
     }
-    if (cartArray.length === 0) return;
 
-    setCheckingOut(true);
+    // Initialize Cashfree SDK with environment mode ('sandbox' or 'production')
+    const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
+    const cashfree = window.Cashfree({ mode });
 
-    try {
-      const { data, error } = await supabase.functions.invoke('create-payment-order', {
-        body: {
-          amount: cartTotal * 100,
-          currency: 'INR',
-          notes: {
-            custom_data: JSON.stringify({ cart, profile })
-          }
-        }
-      });
+    // Open Cashfree payment modal with paymentSessionId from backend
+    await cashfree.checkout({
+      paymentSessionId: data.paymentSessionId,
+      redirectTarget: '_modal',
+    });
 
-      if (error) throw error;
+    // After modal closes, verify payment with backend
+    const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: data.orderId }),
+    });
+    const verifyData = await verifyResponse.json();
+    if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
 
-      const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: data.amount,
-        currency: data.currency,
-        name: 'GrabNGo',
-        description: 'Food Order Payment',
-        order_id: data.id,
-        handler: function (response) {
-          alert('Payment successful! Your order has been placed.');
-          setCart({});
-          setCartOpen(false);
-        },
-        prefill: {
-          name: profile.name || '',
-          email: profile.email || '',
-        },
-        theme: { color: '#f97316' },
-        modal: {
-          ondismiss: function () {
-            setCheckingOut(false);
-          }
-        }
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-
-    } catch (err) {
-      alert(`Payment failed: ${err.message}`);
-      setCheckingOut(false);
+    if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
+      alert('Payment successful! Your order has been placed.');
+      setCart({});
+      setCartOpen(false);
+    } else {
+      alert(`Payment status: ${verifyData.status}. Please check your order.`);
     }
-  };
+
+  } catch (err) {
+    alert(`Payment failed: ${err.message}`);
+  } finally {
+    setCheckingOut(false);
+  }
+};
+
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
