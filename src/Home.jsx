@@ -109,16 +109,24 @@ export default function Home() {
 
   try {
     // Call your Render backend API to create a Cashfree payment session
-    const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: cartTotal,       // Amount in INR rupees (not multiplied by 100)
-        currency: 'INR',
-        cart,
-        profile,
-      }),
-    });
+    const userDetails = {
+  customer_id: profile?.sub || profile?.id || 'guest_' + Date.now(),
+  customer_name: profile?.name || '',
+  customer_email: profile?.email || '',
+  customer_phone: profile?.phone || profile?.phoneNumber || '9999999999',
+};
+
+const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    amount: cartTotal,
+    currency: 'INR',
+    cart,
+    user: userDetails,    // use user, not profile
+  }),
+});
+
 
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
