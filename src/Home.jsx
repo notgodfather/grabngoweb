@@ -108,42 +108,6 @@ export default function Home() {
   setCheckingOut(true);
 
   try {
-    // --- STEP 1A: Create Pending Order in Supabase ---
-    let { data: order, error } = await supabase
-      .from('orders')
-      .insert([{
-        user_id: profile.sub,
-        user_email: profile.email,
-        status: 'Pending Payment',
-        created_at: new Date().toISOString(),
-      }])
-      .select('id')
-      .single();
-
-    if (error) {
-      alert("Error saving order: " + error.message);
-      setCheckingOut(false);
-      return;
-    }
-
-    const orderId = order.id;
-
-    // -- Insert order items --
-    const itemsPayload = cartArray.map(ci => ({
-  order_id: orderId,
-  item_id: ci.item.id,         // use the correct column name!
-  qty: ci.qty,                 // use the correct column name!
-  price: Number(ci.item.price),
-}));
-
-    const { error: itemError } = await supabase.from('order_items').insert(itemsPayload);
-    if (itemError) {
-      alert("Order items error: " + itemError.message);
-      setCheckingOut(false);
-      return;
-    }
-
-    // --- CONTINUE: Prepare userDetails as before ---
     const userDetails = {
       uid: profile?.sub || profile?.id || 'guest_' + Date.now(),
       displayName: profile?.name || 'Guest',
@@ -151,31 +115,28 @@ export default function Home() {
       phoneNumber: profile?.phone || profile?.phoneNumber || '9999999999',
     };
 
-    // --- Call backend to create Cashfree payment session, passing orderId! ---
+    // Step 1: Create Cashfree payment order
     const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    order_id: orderId,        // <-- Pass Supabase order ID here
-    amount: cartTotal,
-    currency: 'INR',
-    cart: cartArray.map(ci => ({
-      price: Number(ci.item.price),
-      quantity: ci.qty,
-      id: ci.item.id,
-      name: ci.item.name,
-      image: ci.item.image_url,
-    })),
-    user: userDetails,
-  }),
-});
-
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        amount: cartTotal,
+        currency: 'INR',
+        cart: cartArray.map(ci => ({
+          price: Number(ci.item.price),
+          quantity: ci.qty,
+          id: ci.item.id,
+          name: ci.item.name,
+          image: ci.item.image_url,
+        })),
+        user: userDetails,
+      }),
+    });
 
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
+    // Step 2: Perform Cashfree checkout
     if (!window.Cashfree) {
       alert('Cashfree SDK not loaded');
       setCheckingOut(false);
@@ -190,16 +151,32 @@ export default function Home() {
       redirectTarget: '_modal',
     });
 
+    // Step 3: Verify payment status
     const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: data.orderId }),
+      body: JSON.stringify({ orderId: data.cfOrderId }),
     });
 
     const verifyData = await verifyResponse.json();
     if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
 
     if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
+      // Step 4: Record order in Supabase only after payment success
+      const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: profile.sub,
+          userEmail: profile.email,
+          cart: cartArray,
+          orderId: data.cfOrderId,
+        }),
+      });
+
+      const recordData = await recordResponse.json();
+      if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
+
       alert('Payment successful! Your order has been placed.');
       setCart({});
       setCartOpen(false);
@@ -212,7 +189,6 @@ export default function Home() {
     setCheckingOut(false);
   }
 };
-
 
 
   return (
