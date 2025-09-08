@@ -6,6 +6,7 @@ import './index.css';
 import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpeg';
+
 // Header Component
 const AppHeader = ({ onGetInTouch }) => (
   <header className="app-header">
@@ -15,13 +16,24 @@ const AppHeader = ({ onGetInTouch }) => (
   </header>
 );
 
-// Main Application
+// Main Application (Landing Page)
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/home';
+
+  // --- THIS IS THE FIX ---
+  // This hook runs when the component loads. It checks if the user is already
+  // logged in and redirects them to the home page if they are.
+  useEffect(() => {
+    const isAuthed = localStorage.getItem('isAuthed') === 'true';
+    if (isAuthed) {
+      navigate('/home', { replace: true });
+    }
+  }, [navigate]); // The dependency array ensures this runs only once on mount.
+  // --- END OF FIX ---
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -59,13 +71,6 @@ export default function App() {
       setError('Google login failed. Please try again later.');
     },
   });
-
-  useEffect(() => {
-    const storedProfile = localStorage.getItem('profile');
-    if (storedProfile) {
-      setProfile(JSON.parse(storedProfile));
-    }
-  }, []);
 
   const handleLoginClick = () => {
     if (profile) {
@@ -105,7 +110,6 @@ export default function App() {
               <div className="shape shape-2"></div>
               <div className="shape shape-3"></div>
               
-              {/* --- Floating Review Cards --- */}
               <div className="floating-card card-1">
                  <img src={ankitpic} alt="Ankit" />
                  <div>
