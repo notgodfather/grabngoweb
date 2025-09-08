@@ -108,6 +108,42 @@ export default function Home() {
   setCheckingOut(true);
 
   try {
+    // --- STEP 1A: Create Pending Order in Supabase ---
+    let { data: order, error } = await supabase
+      .from('orders')
+      .insert([{
+        user_id: profile.sub,
+        user_email: profile.email,
+        status: 'Pending Payment',
+        created_at: new Date().toISOString(),
+      }])
+      .select('id')
+      .single();
+
+    if (error) {
+      alert("Error saving order: " + error.message);
+      setCheckingOut(false);
+      return;
+    }
+
+    const orderId = order.id;
+
+    // -- Insert order items --
+    const itemsPayload = cartArray.map(ci => ({
+  order_id: orderId,
+  item_id: ci.item.id,         // use the correct column name!
+  qty: ci.qty,                 // use the correct column name!
+  price: Number(ci.item.price),
+}));
+
+    const { error: itemError } = await supabase.from('order_items').insert(itemsPayload);
+    if (itemError) {
+      alert("Order items error: " + itemError.message);
+      setCheckingOut(false);
+      return;
+    }
+
+    // --- CONTINUE: Prepare userDetails as before ---
     const userDetails = {
       uid: profile?.sub || profile?.id || 'guest_' + Date.now(),
       displayName: profile?.name || 'Guest',
@@ -115,22 +151,19 @@ export default function Home() {
       phoneNumber: profile?.phone || profile?.phoneNumber || '9999999999',
     };
 
-    console.log('Creating order with payload:', {
-      amount: cartTotal,
-      currency: 'INR',
-      cart: Object.values(cart),
-      user: userDetails,
-    });
-
+    // --- Call backend to create Cashfree payment session, passing orderId! ---
     const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
   method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+  },
   body: JSON.stringify({
+    order_id: orderId,        // <-- Pass Supabase order ID here
     amount: cartTotal,
     currency: 'INR',
-    cart: Object.values(cart).map(ci => ({
+    cart: cartArray.map(ci => ({
       price: Number(ci.item.price),
-      quantity: Number(ci.qty),
+      quantity: ci.qty,
       id: ci.item.id,
       name: ci.item.name,
       image: ci.item.image_url,
@@ -179,6 +212,7 @@ export default function Home() {
     setCheckingOut(false);
   }
 };
+
 
 
   return (
