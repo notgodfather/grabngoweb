@@ -153,9 +153,8 @@ export default function Home() {
       redirectTarget: '_modal',
     });
 
-    // Step 3: Verify payment using returned cfOrderId (or fallback to sentOrderId)
-    // Always try cfOrderId first as this is authoritative from Cashfree
-    const verifyOrderId = data.cfOrderId || data.sentOrderId;
+    // Step 3: Verify payment using string orderId
+    const verifyOrderId = data.orderId;
     console.log('Verifying payment with orderId:', verifyOrderId);
 
     const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
@@ -197,10 +196,6 @@ export default function Home() {
     setCheckingOut(false);
   }
 };
-
-
-
-
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
