@@ -99,78 +99,80 @@ export default function Home() {
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
   const handleCheckout = async () => {
-  if (!profile?.sub) {
-    alert('You must be logged in to place an order.');
-    return;
-  }
-  if (cartArray.length === 0) return;
-
-  setCheckingOut(true);
-
-  try {
-    // Call your Render backend API to create a Cashfree payment session
-    const userDetails = {
-  customer_id: profile?.sub || profile?.id || 'guest_' + Date.now(),
-  customer_name: profile?.name || '',
-  customer_email: profile?.email || '',
-  customer_phone: profile?.phone || profile?.phoneNumber || '9999999999',
-};
-
-const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    amount: cartTotal,
-    currency: 'INR',
-    cart,
-    user: userDetails,    // use user, not profile
-  }),
-});
-
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
-
-    if (!window.Cashfree) {
-      alert('Cashfree SDK not loaded');
-      setCheckingOut(false);
+    if (!profile?.sub) {
+      alert('You must be logged in to place an order.');
       return;
     }
+    if (cartArray.length === 0) return;
 
-    // Initialize Cashfree SDK with environment mode ('sandbox' or 'production')
-    const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
-    const cashfree = window.Cashfree({ mode });
+    setCheckingOut(true);
 
-    // Open Cashfree payment modal with paymentSessionId from backend
-    await cashfree.checkout({
-      paymentSessionId: data.paymentSessionId,
-      redirectTarget: '_modal',
-    });
+    try {
+      const userDetails = {
+        customer_id: profile?.sub || profile?.id || 'guest_' + Date.now(),
+        customer_name: profile?.name || '',
+        customer_email: profile?.email || '',
+        customer_phone: profile?.phone || profile?.phoneNumber || '9999999999',
+      };
 
-    // After modal closes, verify payment with backend
-    const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: data.orderId }),
-    });
-    const verifyData = await verifyResponse.json();
-    if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+      // Debug log for payload sent to backend
+      console.log('Creating order with payload:', {
+        amount: cartTotal,
+        currency: 'INR',
+        cart,
+        user: userDetails,
+      });
 
-    if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-      alert('Payment successful! Your order has been placed.');
-      setCart({});
-      setCartOpen(false);
-    } else {
-      alert(`Payment status: ${verifyData.status}. Please check your order.`);
+      const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: cartTotal,
+          currency: 'INR',
+          cart,
+          user: userDetails,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
+
+      if (!window.Cashfree) {
+        alert('Cashfree SDK not loaded');
+        setCheckingOut(false);
+        return;
+      }
+
+      const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
+      const cashfree = window.Cashfree({ mode });
+
+      await cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: '_modal',
+      });
+
+      const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: data.orderId }),
+      });
+
+      const verifyData = await verifyResponse.json();
+      if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+
+      if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
+        alert('Payment successful! Your order has been placed.');
+        setCart({});
+        setCartOpen(false);
+      } else {
+        alert(`Payment status: ${verifyData.status}. Please check your order.`);
+      }
+    } catch (err) {
+      alert(`Payment failed: ${err.message}`);
+    } finally {
+      setCheckingOut(false);
     }
-
-  } catch (err) {
-    alert(`Payment failed: ${err.message}`);
-  } finally {
-    setCheckingOut(false);
-  }
-};
-
+  };
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
@@ -217,6 +219,7 @@ const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/creat
     </div>
   );
 }
+
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
 
@@ -303,39 +306,68 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
 }
 
 function CategoryBar({ categories, activeCategory, onCategoryChange }) {
-  return ( <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}> <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} /> {categories.map((c) => ( <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} /> ))} </div> );
+  return (
+    <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
+      <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} />
+      {categories.map((c) => (
+        <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} />
+      ))}
+    </div>
+  );
 }
 
 function CategoryPill({ label, active, onClick }) {
-  return ( <button onClick={onClick} style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid #e2e8f0', background: active ? '#f97316' : '#fff', color: active ? '#fff' : '#0f172a', cursor: 'pointer', fontWeight: active ? 600 : 400, whiteSpace: 'nowrap' }} > {label} </button> );
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: '8px 14px',
+        borderRadius: 999,
+        border: '1px solid #e2e8f0',
+        background: active ? '#f97316' : '#fff',
+        color: active ? '#fff' : '#0f172a',
+        cursor: 'pointer',
+        fontWeight: active ? 600 : 400,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {label}
+    </button>
+  );
 }
 
-const greetingContainerStyle = { marginBottom: 24, };
-const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b', };
-const nameStyle = { fontWeight: 700, color: '#f97316', };
-const subheadingStyle = { margin: 0, fontSize: '1.1rem', color: '#64748b', };
-const searchInputStyle = { padding: 10, maxWidth: '45vw', borderRadius: 10, border: '1px solid #e2e8f0', transition: 'all 0.2s ease-in-out', };
+const greetingContainerStyle = { marginBottom: 24 };
+const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b' };
+const nameStyle = { fontWeight: 700, color: '#f97316' };
+const subheadingStyle = { margin: 0, fontSize: '1.1rem', color: '#64748b' };
+const searchInputStyle = {
+  padding: 10,
+  maxWidth: '45vw',
+  borderRadius: 10,
+  border: '1px solid #e2e8f0',
+  transition: 'all 0.2s ease-in-out',
+};
 
 const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600 };
 const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
 const quantityButtonStyle = { width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
 
-const menuItemStyle = { 
-  border: '1px solid #eef2f7', 
-  borderRadius: 14, 
-  overflow: 'hidden', 
-  background: '#fff', 
+const menuItemStyle = {
+  border: '1px solid #eef2f7',
+  borderRadius: 14,
+  overflow: 'hidden',
+  background: '#fff',
   boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
   display: 'flex',
   flexDirection: 'column',
-  transition: 'opacity 0.2s ease-in-out'
+  transition: 'opacity 0.2s ease-in-out',
 };
 
-const outOfStockButtonStyle = { 
-  padding: '10px 16px', 
-  borderRadius: 10, 
-  background: '#e2e8f0', 
-  color: '#64748b', 
-  textAlign: 'center', 
-  fontWeight: 600 
+const outOfStockButtonStyle = {
+  padding: '10px 16px',
+  borderRadius: 10,
+  background: '#e2e8f0',
+  color: '#64748b',
+  textAlign: 'center',
+  fontWeight: 600,
 };
