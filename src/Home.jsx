@@ -98,7 +98,7 @@ export default function Home() {
   const cartArray = Object.values(cart);
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
-  cconst handleCheckout = async () => {
+  const handleCheckout = async () => {
   if (!profile?.sub) {
     alert('You must be logged in to place an order.');
     return;
