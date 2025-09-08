@@ -123,15 +123,22 @@ export default function Home() {
     });
 
     const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: cartTotal,
-        currency: 'INR',
-        cart: Object.values(cart),  // Fix: convert cart object to array
-        user: userDetails,
-      }),
-    });
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    amount: cartTotal,
+    currency: 'INR',
+    cart: Object.values(cart).map(ci => ({
+      price: Number(ci.item.price),
+      quantity: Number(ci.qty),
+      id: ci.item.id,
+      name: ci.item.name,
+      image: ci.item.image_url,
+    })),
+    user: userDetails,
+  }),
+});
+
 
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
