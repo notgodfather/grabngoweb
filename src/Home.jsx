@@ -99,80 +99,79 @@ export default function Home() {
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
   const handleCheckout = async () => {
-    if (!profile?.sub) {
-      alert('You must be logged in to place an order.');
-      return;
-    }
-    if (cartArray.length === 0) return;
+  if (!profile?.sub) {
+    alert('You must be logged in to place an order.');
+    return;
+  }
+  if (cartArray.length === 0) return;
 
-    setCheckingOut(true);
+  setCheckingOut(true);
 
-    try {
-      const userDetails = {
-        customer_id: profile?.sub || profile?.id || 'guest_' + Date.now(),
-        customer_name: profile?.name || '',
-        customer_email: profile?.email || '',
-        customer_phone: profile?.phone || profile?.phoneNumber || '9999999999',
-      };
+  try {
+    const userDetails = {
+      uid: profile?.sub || profile?.id || 'guest_' + Date.now(),
+      displayName: profile?.name || 'Guest',
+      email: profile?.email || 'noemail@example.com',
+      phoneNumber: profile?.phone || profile?.phoneNumber || '9999999999',
+    };
 
-      // Debug log for payload sent to backend
-      console.log('Creating order with payload:', {
+    console.log('Creating order with payload:', {
+      amount: cartTotal,
+      currency: 'INR',
+      cart,
+      user: userDetails,
+    });
+
+    const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         amount: cartTotal,
         currency: 'INR',
         cart,
         user: userDetails,
-      });
+      }),
+    });
 
-      const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: cartTotal,
-          currency: 'INR',
-          cart,
-          user: userDetails,
-        }),
-      });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
-
-      if (!window.Cashfree) {
-        alert('Cashfree SDK not loaded');
-        setCheckingOut(false);
-        return;
-      }
-
-      const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
-      const cashfree = window.Cashfree({ mode });
-
-      await cashfree.checkout({
-        paymentSessionId: data.paymentSessionId,
-        redirectTarget: '_modal',
-      });
-
-      const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: data.orderId }),
-      });
-
-      const verifyData = await verifyResponse.json();
-      if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
-
-      if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-        alert('Payment successful! Your order has been placed.');
-        setCart({});
-        setCartOpen(false);
-      } else {
-        alert(`Payment status: ${verifyData.status}. Please check your order.`);
-      }
-    } catch (err) {
-      alert(`Payment failed: ${err.message}`);
-    } finally {
+    if (!window.Cashfree) {
+      alert('Cashfree SDK not loaded');
       setCheckingOut(false);
+      return;
     }
-  };
+
+    const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
+    const cashfree = window.Cashfree({ mode });
+
+    await cashfree.checkout({
+      paymentSessionId: data.paymentSessionId,
+      redirectTarget: '_modal',
+    });
+
+    const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderId: data.orderId }),
+    });
+
+    const verifyData = await verifyResponse.json();
+    if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+
+    if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
+      alert('Payment successful! Your order has been placed.');
+      setCart({});
+      setCartOpen(false);
+    } else {
+      alert(`Payment status: ${verifyData.status}. Please check your order.`);
+    }
+  } catch (err) {
+    alert(`Payment failed: ${err.message}`);
+  } finally {
+    setCheckingOut(false);
+  }
+};
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
