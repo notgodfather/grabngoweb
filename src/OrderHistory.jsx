@@ -73,7 +73,7 @@ useEffect(() => {
             return (
               <div key={o.id} style={{ border: '1px solid #eef2f7', borderRadius: 12, padding: 14, background: '#fff' }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div style={{ fontWeight: 700 }}>Order #{o.id.slice(0, 8)}</div>
+                  <div style={{ fontWeight: 700 }}>Order #{o.id.slice(-8)}</div>
                   <div style={{ marginLeft: 'auto', color: '#64748b', fontSize: 14 }}>
                     {new Date(o.created_at).toLocaleString()}
                   </div>
