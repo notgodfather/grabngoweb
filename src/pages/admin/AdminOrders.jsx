@@ -65,7 +65,7 @@ export default function AdminOrders() {
               <div style={orderHeaderStyle}>
                 <div>
                   <span style={{ fontWeight: 700 }}>Order ID:</span>
-                  <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{order.id.slice(0, 8)}</span>
+                  <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{order.id.slice(-8)}</span>
                 </div>
                 <div>
                   <span style={{ fontWeight: 700 }}>User:</span>
