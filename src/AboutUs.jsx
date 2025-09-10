@@ -10,21 +10,25 @@ const team = [
   {
     name: 'Ankit Ranjan',
     role: 'Lead Developer',
+    branch: 'B.Tech CSE · 2nd Year',
     img: ankitpic,
     note: 'Built so busy days still have good food—no more choosing between a hot meal and a lecture.',
   },{
     name: 'Shreyas Shetty',
     role: 'UI/UX Designer',
+    branch: 'B.Tech CSE · 2nd Year',
     img: shreyaspic,
     note: 'Simple flows and warm details—ordering should feel as friendly as sharing a table.',
   },
   {
     name: 'Shaswat',
     role: 'Backend Engineer',
+    branch: 'B.Tech Mech · 2nd Year',
     img: shaswatpic,
     note: 'Reliability is kindness—webhooks, retries, and real‑time updates keep promises on time.',
   },
 ];
+
 
 export default function AboutUs() {
   return (
@@ -59,15 +63,22 @@ We tested it during real rush hours, broke it a few times, then made it reliable
           <div className="team-grid">
             {team.map((m) => (
               <article className="card" key={m.name}>
-                <img className="photo" src={m.img} alt={m.name} />
-                <div className="card-body">
-                  <div className="card-head">
-                    <h3 className="name">{m.name}</h3>
-                    <span className="role">{m.role}</span>
-                  </div>
-                  <p className="note">“{m.note}”</p>
-                </div>
-              </article>
+  <img className="photo" src={m.img} alt={m.name} />
+  <div className="card-body">
+    <div className="card-head">
+      <h3 className="name">{m.name}</h3>
+      <span className="role">{m.role}</span>
+    </div>
+
+    {/* New: branch/year chip */}
+    <div className="badge-row">
+      <span className="branch-badge">{m.branch}</span>
+    </div>
+
+    <p className="note">“{m.note}”</p>
+  </div>
+</article>
+
             ))}
           </div>
         </div>
