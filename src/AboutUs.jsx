@@ -8,13 +8,13 @@ import shreyaspic from './assets/shreyaspic.jpeg';
 import raechelpic from './assets/raechelpic.jpeg';
 const team = [
   {
-    name: 'Ankit Ranjan',
+    name: 'Ankit',
     role: 'Lead Developer',
     branch: 'B.Tech CSE · 2nd Year',
     img: ankitpic,
     note: 'Built so busy days still have good food—no more choosing between a hot meal and a lecture.',
   },{
-    name: 'Shreyas Shetty',
+    name: 'Shreyas',
     role: 'UI/UX Designer',
     branch: 'B.Tech CSE · 2nd Year',
     img: shreyaspic,
