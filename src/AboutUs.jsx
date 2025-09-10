@@ -24,12 +24,6 @@ const team = [
     img: shaswatpic,
     note: 'Reliability is kindness—webhooks, retries, and real‑time updates keep promises on time.',
   },
-  {
-    name: 'Raechel Thomas',
-    role: 'Enginner Wifey',
-    img: raechelpic,
-    note: 'khikhi...engineer wifey here...also known as isai ladki..khikhikhi',
-  }
 ];
 
 export default function AboutUs() {
