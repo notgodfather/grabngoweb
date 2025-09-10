@@ -5,6 +5,7 @@ import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpeg';
 import shreyaspic from './assets/shreyaspic.jpeg';
+import raechelpic from './assets/raechelpic.jpeg';
 const team = [
   {
     name: 'Ankit Ranjan',
@@ -23,6 +24,12 @@ const team = [
     img: shaswatpic,
     note: 'Reliability is kindness—webhooks, retries, and real‑time updates keep promises on time.',
   },
+  {
+    name: 'Raechel Thomas',
+    role: 'Enginner Wifey',
+    img: raechelpic,
+    note: 'khikhi...engineer wifey here...also known as isai ladki..khikhikhi',
+  }
 ];
 
 export default function AboutUs() {
