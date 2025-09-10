@@ -96,7 +96,7 @@ body {
   color: var(--bg-white);
   box-shadow: 0 8px 20px -6px var(--primary-color);
 }
-.btn-primary:hover {
+.btn-primaryy:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 25px -8px var(--primary-color);
 }
