@@ -206,4 +206,55 @@ body {
 .nav-link:hover {
   color: #4f46e5; /* Your primary color */
 }
+/* About Us link — warm underline + pill hover */
+.nav-link--about{
+  position: relative;
+  display: inline-block;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-weight: 700;
+  color: #ff7a59;               /* warm coral */
+  transition: color .2s ease, background-color .2s ease, transform .12s ease;
+}
+
+/* underline grows from center */
+.nav-link--about::after{
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 6px;                  /* aligns nicely under text */
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transform: translateX(-50%);
+  transition: width .25s ease;
+}
+
+/* subtle pill + underline on hover */
+.nav-link--about:hover{
+  background: #fff3ed;          /* soft coral wash */
+  color: #f25e3d;               /* a touch deeper on hover */
+  transform: translateY(-1px);
+}
+.nav-link--about:hover::after{
+  width: 70%;
+}
+
+/* focus-visible for keyboard accessibility */
+.nav-link--about:focus-visible{
+  outline: 2px solid #ffd8cb;
+  outline-offset: 2px;
+  background: #fff7f3;
+}
+
+/* optional: tiny pulse if you want extra attention on first paint
+.nav-link--about{
+  animation: aboutPulse 1.6s ease-out 0.6s 1 both;
+}
+@keyframes aboutPulse{
+  0%{ transform: scale(0.98); }
+  60%{ transform: scale(1.02); }
+  100%{ transform: scale(1); }
+}
+*/
 
