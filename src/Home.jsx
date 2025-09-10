@@ -147,13 +147,11 @@ export default function Home() {
     const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
     const cashfree = window.Cashfree({ mode });
 
-    // Step 2: Checkout
     await cashfree.checkout({
       paymentSessionId: data.paymentSessionId,
       redirectTarget: '_modal',
     });
 
-    // Step 3: Verify payment using string orderId
     const verifyOrderId = data.orderId;
     console.log('Verifying payment with orderId:', verifyOrderId);
 
@@ -169,7 +167,7 @@ export default function Home() {
     console.log('Payment verification result:', verifyData);
 
     if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-      // Step 4: Record order only after payment success
+
       const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -7,7 +7,6 @@ import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpeg';
 
-// Header Component
 const AppHeader = ({ onGetInTouch }) => (
   <header className="app-header">
     <div className="container header-container">
@@ -16,7 +15,6 @@ const AppHeader = ({ onGetInTouch }) => (
   </header>
 );
 
-// Main Application (Landing Page)
 export default function App() {
   const [profile, setProfile] = useState(null);
   const [error, setError] = useState('');
@@ -24,16 +22,12 @@ export default function App() {
   const location = useLocation();
   const from = location.state?.from?.pathname || '/home';
 
-  // --- THIS IS THE FIX ---
-  // This hook runs when the component loads. It checks if the user is already
-  // logged in and redirects them to the home page if they are.
   useEffect(() => {
     const isAuthed = localStorage.getItem('isAuthed') === 'true';
     if (isAuthed) {
       navigate('/home', { replace: true });
     }
-  }, [navigate]); // The dependency array ensures this runs only once on mount.
-  // --- END OF FIX ---
+  }, [navigate]); 
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -98,7 +92,6 @@ export default function App() {
             {error && <p className="error-message">{error}</p>}
           </div>
 
-          {/* Right Column */}
           <div className="hero-image-container">
             <div className="image-wrapper">
               <img

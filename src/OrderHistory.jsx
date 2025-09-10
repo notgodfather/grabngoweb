@@ -42,15 +42,12 @@ useEffect(() => {
   };
 
   if (userId) {
-    // 1. Fetch initial data.
     fetchUserOrders();
 
-    // 2. Set up the polling interval.
     const interval = setInterval(() => {
       fetchUserOrders();
     }, 10000);
 
-    // 3. Cleanup the interval.
     return () => {
       clearInterval(interval);
     };
@@ -77,7 +74,6 @@ useEffect(() => {
                   <div style={{ marginLeft: 'auto', color: '#64748b', fontSize: 14 }}>
                     {new Date(o.created_at).toLocaleString()}
                   </div>
-                  {/* --- NEW: Display the real-time status --- */}
                   <span style={userStatusPillStyle(o.status)}>{o.status}</span>
                 </div>
                 <div style={{ marginTop: 12, display: 'grid', gap: 8, borderTop: '1px solid #eef2f7', paddingTop: 12 }}>

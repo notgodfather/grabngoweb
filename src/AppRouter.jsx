@@ -36,7 +36,6 @@ export default function AppRouter() {
   );
 }
 
-// --- Corrected TopNav Component ---
 
 function TopNav() {
   const isAuthed = localStorage.getItem('isAuthed') === 'true';
@@ -44,7 +43,6 @@ function TopNav() {
   
   const navigate = useNavigate();
 
-  // If the user is not authenticated, render nothing.
   if (!isAuthed) {
     return null;
   }
@@ -63,13 +61,10 @@ function TopNav() {
   return (
     <nav style={navStyle}>
       <span style={{fontWeight:'bold', fontSize:'18px'}}>GrabNGo</span>
-      {/* This div now contains all links and the button, pushed to the right */}
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
-        {/* User links */}
         <Link to="/home" style={linkStyle}>Menu</Link>
         <Link to="/orders" style={linkStyle}>My Orders</Link>
-        
-        {/* Admin links (only shown if the user is an admin) */}
+
         {isAdmin && (
           <>
             <Link to="/admin/orders" style={adminLinkStyle}>Manage Orders</Link>
@@ -86,7 +81,6 @@ function TopNav() {
   );
 }
 
-// --- Styles ---
 
 const navStyle = {
   display: 'flex',
