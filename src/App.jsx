@@ -6,11 +6,15 @@ import './index.css';
 import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpeg';
+import { Link } from 'react-router-dom';
 
 const AppHeader = ({ onGetInTouch }) => (
   <header className="app-header">
     <div className="container header-container">
       <div className="logo">GrabNGo</div>
+       <nav>
+        <Link to="/about" className="nav-link">About Us</Link>
+      </nav>
     </div>
   </header>
 );

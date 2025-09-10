@@ -91,7 +91,7 @@ body {
   transition: all 0.3s ease;
 }
 .btn-primary {
-  background-color: var(--primary-color);
+  background-color: rgb(249, 115, 22);
   color: var(--bg-white);
   box-shadow: 0 8px 20px -6px var(--primary-color);
 }
@@ -185,3 +185,24 @@ body {
   .image-wrapper { width: 300px; height: 300px; }
   .floating-card { display: none; } 
 }
+
+/* Add this to index.css */
+.header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.nav-link {
+  color: #333;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.nav-link:hover {
+  color: #4f46e5; /* Your primary color */
+}
+

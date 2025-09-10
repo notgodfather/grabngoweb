@@ -8,6 +8,7 @@ import LoginPage from './App.jsx';
 import Home from './Home.jsx';
 import OrderHistory from './OrderHistory.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
+import AboutUs from './AboutUs.jsx'; // <-- 1. IMPORT the new component
 
 import AdminRoute from './pages/admin/AdminRoute.jsx';
 import AdminOrders from './pages/admin/AdminOrders.jsx';
@@ -18,11 +19,15 @@ export default function AppRouter() {
     <>
       <TopNav />
       <Routes>
+        {/* Public Routes */}
         <Route path="/" element={<LoginPage />} />
+        <Route path="/about" element={<AboutUs />} /> {/* <-- 2. ADD the new route */}
+
+        {/* Protected User Routes */}
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
 
-        {/* Admin Routes */}
+        {/* Protected Admin Routes */}
         <Route 
           path="/admin/items" 
           element={<AdminRoute><AdminItems /></AdminRoute>} 
@@ -37,6 +42,8 @@ export default function AppRouter() {
 }
 
 
+// No changes are needed for your TopNav or its styles.
+// It will correctly not display on the /about page.
 function TopNav() {
   const isAuthed = localStorage.getItem('isAuthed') === 'true';
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
@@ -55,7 +62,7 @@ function TopNav() {
     localStorage.removeItem('profile');
     localStorage.removeItem('cart');
     navigate('/');
-    window.location.reload(); // Force a refresh to clear state
+    window.location.reload();
   };
 
   return (
@@ -72,7 +79,6 @@ function TopNav() {
           </>
         )}
 
-        {/* Logout button */}
         <button onClick={handleLogout} style={logoutButtonStyle}>
           Logout
         </button>
@@ -81,7 +87,7 @@ function TopNav() {
   );
 }
 
-
+// ... All your existing styles (navStyle, linkStyle, etc.) remain the same
 const navStyle = {
   display: 'flex',
   alignItems: 'center',
@@ -90,11 +96,13 @@ const navStyle = {
   background: '#fff',
 };
 
+
 const linkStyle = { 
   textDecoration: 'none', 
   color: '#334155', 
   fontWeight: '400'
 };
+
 
 const adminLinkStyle = { 
   ...linkStyle, 
@@ -103,6 +111,7 @@ const adminLinkStyle = {
   padding: '8px 12px', 
   borderRadius: 8 
 };
+
 
 const logoutButtonStyle = {
   background: '#fee2e2',
