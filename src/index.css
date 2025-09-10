@@ -90,9 +90,9 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
 }
-.btn-primary {
+.btn-primaryy {
   background-color: rgb(249,115,22);
-  
+
   color: var(--bg-white);
   box-shadow: 0 8px 20px -6px var(--primary-color);
 }

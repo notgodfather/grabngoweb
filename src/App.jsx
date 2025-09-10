@@ -89,7 +89,7 @@ export default function App() {
             <h1>Quick Canteen <span className="highlight">Food Service</span></h1>
             <p className="subtitle">Skip the lines and order the delicious food ahead.</p>
             <div className="cta-buttons">
-              <button id="order-now-btn" className="btn btn-primary" onClick={handleLoginClick}>
+              <button id="order-now-btn" className="btn btn-primaryy" onClick={handleLoginClick}>
                 Order Now
               </button>
             </div>
