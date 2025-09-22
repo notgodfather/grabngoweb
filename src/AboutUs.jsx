@@ -5,7 +5,6 @@ import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpeg';
 import shreyaspic from './assets/shreyaspic.jpeg';
-import raechelpic from './assets/raechelpic.jpeg';
 const team = [
   {
     name: 'Ankit',
@@ -15,15 +14,15 @@ const team = [
     note: 'Built so busy days still have good food—no more choosing between a hot meal and a lecture.',
   },{
     name: 'Shreyas',
-    role: 'UI/UX Designer',
+    role: 'Marketing Head',
     branch: 'B.Tech CSE · 2nd Year',
     img: shreyaspic,
     note: 'Simple flows and warm details—ordering should feel as friendly as sharing a table.',
   },
   {
     name: 'Shaswat',
-    role: 'Backend Engineer',
-    branch: 'B.Tech Mech · 2nd Year',
+    role: 'Lead Advisor',
+    branch: 'B.Tech · 2nd Year',
     img: shaswatpic,
     note: 'Reliability is kindness—webhooks, retries, and real‑time updates keep promises on time.',
   },
