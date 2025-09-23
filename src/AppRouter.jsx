@@ -1,14 +1,14 @@
 import React from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { googleLogout } from '@react-oauth/google';
-
+import { Analytics } from "@vercel/analytics/next"
 import { ADMIN_EMAIL } from './config';
 
 import LoginPage from './App.jsx';
 import Home from './Home.jsx';
 import OrderHistory from './OrderHistory.jsx';
 import ProtectedRoute from './ProtectedRoute.jsx';
-import AboutUs from './AboutUs.jsx'; // <-- 1. IMPORT the new component
+import AboutUs from './AboutUs.jsx';
 
 import AdminRoute from './pages/admin/AdminRoute.jsx';
 import AdminOrders from './pages/admin/AdminOrders.jsx';
@@ -17,17 +17,13 @@ import AdminItems from './pages/admin/AdminItems.jsx';
 export default function AppRouter() {
   return (
     <>
+    <Analytics />
       <TopNav />
       <Routes>
-        {/* Public Routes */}
         <Route path="/" element={<LoginPage />} />
-        <Route path="/about" element={<AboutUs />} /> {/* <-- 2. ADD the new route */}
-
-        {/* Protected User Routes */}
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
-
-        {/* Protected Admin Routes */}
         <Route 
           path="/admin/items" 
           element={<AdminRoute><AdminItems /></AdminRoute>} 
@@ -41,9 +37,6 @@ export default function AppRouter() {
   );
 }
 
-
-// No changes are needed for your TopNav or its styles.
-// It will correctly not display on the /about page.
 function TopNav() {
   const isAuthed = localStorage.getItem('isAuthed') === 'true';
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
@@ -87,7 +80,6 @@ function TopNav() {
   );
 }
 
-// ... All your existing styles (navStyle, linkStyle, etc.) remain the same
 const navStyle = {
   display: 'flex',
   alignItems: 'center',
