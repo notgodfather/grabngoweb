@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import './AboutUs.css';
 import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
-import shaswatpic from './assets/shaswatpic.jpeg';
+import shaswatpic from './assets/shaswatpic.jpg';
 import shreyaspic from './assets/shreyaspic.jpeg';
 const team = [
   {
