@@ -5,7 +5,7 @@ import axios from 'axios';
 import './index.css';
 import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
-import shaswatpic from './assets/shaswatpic.jpeg';
+import shaswatpic from './assets/shaswatpic.jpg';
 import { Link } from 'react-router-dom';
 
 const AppHeader = ({ onGetInTouch }) => (
