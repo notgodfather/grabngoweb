@@ -394,4 +394,4 @@ const outOfStockButtonStyle = {
   fontWeight: 600,
 };
 const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
-const demostyle={color:'red'};
+const demostyle={color:'red' fontWeight:'bold'};
