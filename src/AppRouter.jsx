@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { googleLogout } from '@react-oauth/google';
-import { Analytics } from "@vercel/analytics/next"
 import { ADMIN_EMAIL } from './config';
 
 import LoginPage from './App.jsx';
@@ -17,7 +16,6 @@ import AdminItems from './pages/admin/AdminItems.jsx';
 export default function AppRouter() {
   return (
     <>
-    <Analytics />
       <TopNav />
       <Routes>
         <Route path="/" element={<LoginPage />} />
