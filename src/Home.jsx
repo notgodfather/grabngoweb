@@ -252,6 +252,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
             👋 Hello, <span style={nameStyle}>{firstName}</span>
           </h1>
           <p style={subheadingStyle}>What are you craving today?</p>
+          <p style={demostyle}>This is just a demo menu. Real menu will be updated when it goes live.</p>
         </div>
       )}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
@@ -393,3 +394,4 @@ const outOfStockButtonStyle = {
   fontWeight: 600,
 };
 const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
+const demostyle={color:'red'};
