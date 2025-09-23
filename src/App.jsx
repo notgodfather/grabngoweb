@@ -46,7 +46,7 @@ export default function App() {
         const email = (userData.email || '').toLowerCase();
         
         const allowed =
-          email.endsWith('@bmsce.ac.in');
+       email.endsWith('@bmsce.ac.in');
         if (allowed) {
           setProfile(userData);
           setError('');
@@ -66,7 +66,7 @@ export default function App() {
       setError('Google login failed. Please try again later.');
     },
   });
-
+//hi
   const handleLoginClick = () => {
     if (profile) {
       navigate(from, { replace: true });
