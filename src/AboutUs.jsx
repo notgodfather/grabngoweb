@@ -5,6 +5,7 @@ import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpg';
 import shreyaspic from './assets/shreyaspic.jpeg';
+import souppic from './assets/souppic.jpg';
 const team = [
   {
     name: 'Ankit',
@@ -24,6 +25,13 @@ const team = [
     role: 'Lead Advisor',
     branch: 'B.Tech · 2nd Year',
     img: shaswatpic,
+    note: 'Reliability is kindness—webhooks, retries, and real‑time updates keep promises on time.',
+  },
+  {
+    name: 'Soup',
+    role: 'UI/UX',
+    branch: 'B.Tech CSE· 2nd Year',
+    img: souppic,
     note: 'Reliability is kindness—webhooks, retries, and real‑time updates keep promises on time.',
   },
 ];
