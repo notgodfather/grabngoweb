@@ -25,8 +25,6 @@ body {
   max-width: 1200px;
   margin: 0 auto;
 }
-
-/* --- Header --- */
 .app-header {
   position: absolute;
   top: 0;
@@ -46,7 +44,6 @@ body {
   color: black;
 }
 
-/* --- Hero Section --- */
 .hero-section {
   min-height: 100vh;
   display: flex;
@@ -60,7 +57,6 @@ body {
   gap: 2rem;
 }
 
-/* Left Column */
 .hero-text {
   flex: 1;
   animation: slideInFromLeft 0.8s ease-out;
@@ -101,7 +97,6 @@ body {
   box-shadow: 0 12px 25px -8px var(--primary-color);
 }
 
-/* Right Column */
 .hero-image-container {
   flex: 1;
   display: flex;
@@ -117,7 +112,6 @@ body {
   border-radius: 50%;
 }
 
-/* --- Floating Cards & Shapes --- */
 .shape { position: absolute; border-radius: 50%; z-index: -1; }
 .shape-1 {
   width: 100%;
@@ -128,7 +122,7 @@ body {
   opacity: 0.15;
   animation: pulse 4s infinite ease-in-out;
 }
-.shape-2 { display: none; } /* Simplified design */
+.shape-2 { display: none; }
 .shape-3 { display: none; }
 
 .floating-card {
@@ -147,7 +141,6 @@ body {
 .floating-card small { font-size: 0.8rem; color: var(--muted-text); display: block; }
 .stars { font-size: 0.7rem; }
 
-/* Positioning for each card */
 .card-1 { bottom: 20%; right: -15%; }
 .card-2 { top: 15%; right: -20%; animation-delay: -1.5s; }
 .card-3 { bottom: 10%; left: -25%; animation-delay: -3s; }
@@ -187,7 +180,6 @@ body {
   .floating-card { display: none; } 
 }
 
-/* Add this to index.css */
 .header-container {
   display: flex;
   justify-content: space-between;
@@ -204,25 +196,23 @@ body {
 }
 
 .nav-link:hover {
-  color: #4f46e5; /* Your primary color */
+  color: #4f46e5;
 }
-/* About Us link — warm underline + pill hover */
 .nav-link--about{
   position: relative;
   display: inline-block;
   padding: 8px 12px;
   border-radius: 12px;
   font-weight: 700;
-  color: #ff7a59;               /* warm coral */
+  color: #ff7a59;
   transition: color .2s ease, background-color .2s ease, transform .12s ease;
 }
 
-/* underline grows from center */
 .nav-link--about::after{
   content: "";
   position: absolute;
   left: 50%;
-  bottom: 6px;                  /* aligns nicely under text */
+  bottom: 6px;
   width: 0;
   height: 2px;
   background: currentColor;
@@ -230,31 +220,19 @@ body {
   transition: width .25s ease;
 }
 
-/* subtle pill + underline on hover */
 .nav-link--about:hover{
-  background: #fff3ed;          /* soft coral wash */
-  color: #f25e3d;               /* a touch deeper on hover */
+  background: #fff3ed;         
+  color: #f25e3d;             
   transform: translateY(-1px);
 }
 .nav-link--about:hover::after{
   width: 70%;
 }
 
-/* focus-visible for keyboard accessibility */
+
 .nav-link--about:focus-visible{
   outline: 2px solid #ffd8cb;
   outline-offset: 2px;
   background: #fff7f3;
 }
-
-/* optional: tiny pulse if you want extra attention on first paint
-.nav-link--about{
-  animation: aboutPulse 1.6s ease-out 0.6s 1 both;
-}
-@keyframes aboutPulse{
-  0%{ transform: scale(0.98); }
-  60%{ transform: scale(1.02); }
-  100%{ transform: scale(1); }
-}
-*/
 
