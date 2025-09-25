@@ -35,12 +35,10 @@ const team = [
     note: 'Reliability is kindness—webhooks, retries, and real‑time updates keep promises on time.',
   },
 ];
-//hehe
 
 export default function AboutUs() {
   return (
     <main className="about-min">
-      {/* About */}
       <section className="section">
         <div className="container">
           <p className="badge">Made at BMSCE</p>
@@ -61,7 +59,6 @@ We tested it during real rush hours, broke it a few times, then made it reliable
         </div>
       </section>
 
-      {/* Team */}
       <section className="section">
         <div className="container">
           <h2 className="title-sm">Meet the Team</h2>
@@ -77,7 +74,6 @@ We tested it during real rush hours, broke it a few times, then made it reliable
       <span className="role">{m.role}</span>
     </div>
 
-    {/* New: branch/year chip */}
     <div className="badge-row">
       <span className="branch-badge">{m.branch}</span>
     </div>
