@@ -85,12 +85,12 @@ export default function App() {
           <div className="hero-text">
             <h1>Quick Canteen <span className="highlight">Food Service</span></h1>
             <p className="subtitle">Skip the lines and order the delicious food ahead.</p>
-            <p><span style={color:'red'}>Apoorva</span>lue of time is wasting it in queues.</p>
+            <p>A POOR VAlue of time is wasting it in queues.</p>
             <div className="cta-buttons">
               <button id="order-now-btn" className="btn btn-primaryy" onClick={handleLoginClick}>
                 Order Now
               </button>
-            </div>  
+            </div>
             {error && <p className="error-message">{error}</p>}
           </div>
 
