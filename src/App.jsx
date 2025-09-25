@@ -81,11 +81,10 @@ export default function App() {
       
       <main className="hero-section">
         <div className="container hero-container">
-          {/* Left Column */}
           <div className="hero-text">
             <h1>Quick Canteen <span className="highlight">Food Service</span></h1>
             <p className="subtitle">Skip the lines and order the delicious food ahead.</p>
-            <p>A POOR VAlue of time is wasting it in queues.</p>
+            <p>A poor value of time is wasting it in queues.</p>
             <div className="cta-buttons">
               <button id="order-now-btn" className="btn btn-primaryy" onClick={handleLoginClick}>
                 Order Now
