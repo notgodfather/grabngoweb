@@ -13,7 +13,7 @@ const AppHeader = ({ onGetInTouch }) => (
     <div className="container header-container">
       <div className="logo">GrabNGo</div>
        <nav>
-         <Link to="/about" className="nav-link nav-link--about"></Link>
+         <Link to="/about" className="nav-link nav-link--about">About Us</Link>
 
       </nav>
     </div>
