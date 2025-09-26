@@ -24,10 +24,9 @@ export default function AdminOrders() {
     setLoading(false);
   }, []);
 
-  // Effect for initial load and polling
   useEffect(() => {
-    fetchOrders(); // Initial fetch
-    const interval = setInterval(fetchOrders, 10000); // Poll every 10 seconds
+    fetchOrders();
+    const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
 

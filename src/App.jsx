@@ -13,7 +13,7 @@ const AppHeader = ({ onGetInTouch }) => (
     <div className="container header-container">
       <div className="logo">GrabNGo</div>
        <nav>
-        <Link to="/about" className="nav-link nav-link--about">About Us</Link>
+         <Link to="/about" className="nav-link nav-link--about"></Link>
 
       </nav>
     </div>
@@ -44,7 +44,6 @@ export default function App() {
 
         const userData = userInfo.data;
         const email = (userData.email || '').toLowerCase();
-        
         const allowed =
        email.endsWith('@bmsce.ac.in');
         if (allowed) {
