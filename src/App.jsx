@@ -51,19 +51,22 @@ export default function App() {
           localStorage.setItem('isAuthed', 'true');
           localStorage.setItem('profile', JSON.stringify(userData));
           const { data, error } = await supabase
-          .from('users')
-          .select('id')
-          .eq('id', userData.sub)  // Using Google user ID (sub) as unique id
-          .single();
+  .from('users')
+  .select('id')
+  .eq('id', userData.sub)
+  .single();
+console.log('Select user:', { data, error });
 
-        if (!data && !error) {
-          await supabase.from('users').insert({
-            id: userData.sub,
-            email: userData.email,
-            name: userData.name,
-            created_at: new Date().toISOString(),
-          });
-        }
+if (!data && !error) {
+  const { data: insertData, error: insertError } = await supabase.from('users').insert({
+    id: userData.sub,
+    email: userData.email,
+    name: userData.name,
+    created_at: new Date().toISOString(),
+  });
+  console.log('Insert user:', { insertData, insertError });
+}
+
           navigate(from, { replace: true });
         } else {
           setError('Please log in with a valid college email.');
