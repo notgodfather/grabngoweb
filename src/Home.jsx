@@ -120,7 +120,7 @@ export default function Home() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        amount: cartTotal,
+        amount: totalAmount,
         currency: 'INR',
         cart: cartArray.map(ci => ({
           price: Number(ci.item.price),
