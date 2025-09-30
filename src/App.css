@@ -70,13 +70,13 @@ body {
   overflow: hidden;
   border-right: 3px solid #ff6ec4; /* blinking cursor */
   width: 0;
-  animation: typing 2s steps(46, end) forwards, blink 0.75s step-end infinite;
+  animation: typing 3s steps(46, end) forwards, blink 0.75s step-end infinite;
 }
 
 @keyframes typing {
   0% { width: 0; }
   20% { width: 9ch; }   /* pause at "A poor va" (8 characters) */
-  22% { width: 9ch; }   /* holding the pause */
+  28% { width: 9ch; }   /* holding the pause */
   100% { width: 46ch; } /* full line typed */
 }
 
