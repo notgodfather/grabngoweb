@@ -5,7 +5,7 @@ body {
   color: #111827;
 }
 
-.hero {
+.hero-section {
   background: linear-gradient(135deg, #2563eb, #16a34a);
   color: white;
   padding: 5rem 2rem;
@@ -15,7 +15,7 @@ body {
   overflow: hidden;
 }
 
-.hero::after {
+.hero-section::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -23,12 +23,16 @@ body {
   opacity: 0.05;
 }
 
-.hero-inner {
+.hero-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 3rem;
   z-index: 1;
   position: relative;
+}
+
+.hero-text {
+  z-index: 1;
 }
 
 .badge {
@@ -43,19 +47,49 @@ body {
   backdrop-filter: blur(8px);
 }
 
-.hero h1 {
+.hero-text h1 {
   font-size: 3rem;
   margin: 1rem 0;
   line-height: 1.2;
 }
 
-.hero p {
+.subtitle {
   font-size: 1.1rem;
   opacity: 0.9;
 }
 
-.cta {
+/* Typing quote styles */
+.quote.typing {
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #ff6ec4, #7873f5, #4fd1c5);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 3px solid #ff6ec4; /* blinking cursor */
+  width: 0;
+  animation: typing 6s steps(46, end) forwards, blink 0.75s step-end infinite;
+}
+
+@keyframes typing {
+  0% { width: 0; }
+  25% { width: 8ch; }   /* pause at "A poor va" (8 characters) */
+  35% { width: 8ch; }   /* holding the pause */
+  100% { width: 46ch; } /* full line typed */
+}
+
+@keyframes blink {
+  from, to { border-color: transparent; }
+  50% { border-color: #ff6ec4; }
+}
+
+.cta-buttons {
   margin-top: 1.5rem;
+}
+
+.btn-primaryy {
   background: #facc15;
   color: #1f2937;
   font-weight: 600;
@@ -66,7 +100,7 @@ body {
   transition: transform 0.25s ease, background 0.3s ease;
 }
 
-.cta:hover {
+.btn-primaryy:hover {
   background: #eab308;
   transform: translateY(-2px);
 }
@@ -123,40 +157,15 @@ body {
   background: #f1f5f9;
   box-shadow: inset 0 0 4px rgba(0,0,0,0.05);
 }
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @media (max-width: 768px) {
-  .hero-inner {
+  .hero-container {
     grid-template-columns: 1fr;
     text-align: center;
   }
 }
-.quote.typing {
-  font-size: 1.4rem;
-  font-weight: 600;
-  letter-spacing: 1px;
-  white-space: nowrap;
-  overflow: hidden;
-  border-right: 3px solid #ff6ec4; /* blinking cursor look */
-  width: 0;
-  animation: typing 6s steps(40, end) forwards, blink 0.75s step-end infinite;
-}
-
-@keyframes typing {
-  0% { width: 0 }
-  25% { width: 8ch }   /* pause at "A poor va" (8 characters) */
-  35% { width: 8ch }   /* holding the pause */
-  100% { width: 46ch } /* full line typed */
-}
-
-@keyframes blink {
-  from, to { border-color: transparent }
-  50% { border-color: #ff6ec4 }
-}
-
-
-
-

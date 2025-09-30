@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import './index.css';
+import './App.css';  // make sure the CSS file name matches your import
 import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpg';
@@ -12,9 +12,8 @@ const AppHeader = ({ onGetInTouch }) => (
   <header className="app-header">
     <div className="container header-container">
       <div className="logo">GrabNGo</div>
-       <nav>
-         <Link to="/about" className="nav-link nav-link--about">About Us</Link>
-
+      <nav>
+        <Link to="/about" className="nav-link nav-link--about">About Us</Link>
       </nav>
     </div>
   </header>
@@ -32,7 +31,7 @@ export default function App() {
     if (isAuthed) {
       navigate('/home', { replace: true });
     }
-  }, [navigate]); 
+  }, [navigate]);
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -44,8 +43,7 @@ export default function App() {
 
         const userData = userInfo.data;
         const email = (userData.email || '').toLowerCase();
-        const allowed =
-       email.endsWith('@bmsce.ac.in');
+        const allowed = email.endsWith('@bmsce.ac.in');
         if (allowed) {
           setProfile(userData);
           setError('');
@@ -65,7 +63,7 @@ export default function App() {
       setError('Google login failed. Please try again later.');
     },
   });
-//hi
+
   const handleLoginClick = () => {
     if (profile) {
       navigate(from, { replace: true });
@@ -77,16 +75,14 @@ export default function App() {
   return (
     <div className="app-wrapper">
       <AppHeader onGetInTouch={handleLoginClick} />
-      
       <main className="hero-section">
         <div className="container hero-container">
           <div className="hero-text">
             <h1>Quick Canteen <span className="highlight">Food Service</span></h1>
             <p className="subtitle">Skip the lines and order the delicious food ahead.</p>
             <p className="quote typing">
-  A poor value of time is wasting it in queues.
-</p>
-
+              A poor value of time is wasting it in queues.
+            </p>
             <div className="cta-buttons">
               <button id="order-now-btn" className="btn btn-primaryy" onClick={handleLoginClick}>
                 Order Now
@@ -105,32 +101,32 @@ export default function App() {
               <div className="shape shape-1"></div>
               <div className="shape shape-2"></div>
               <div className="shape shape-3"></div>
-              
+
               <div className="floating-card card-1">
-                 <img src={ankitpic} alt="Ankit" />
-                 <div>
-                    <strong>Ankit</strong>
-                    <small>Veg Fried Maggie</small>
-                    <div className="stars">⭐⭐⭐⭐⭐</div>
-                 </div>
+                <img src={ankitpic} alt="Ankit" />
+                <div>
+                  <strong>Ankit</strong>
+                  <small>Veg Fried Maggie</small>
+                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                </div>
               </div>
 
               <div className="floating-card card-2">
-                 <img src={shaswatpic} alt="Shaswat" />
-                 <div>
-                    <strong>Shaswat</strong>
-                    <small>Loved the cold coffee!</small>
-                    <div className="stars">⭐⭐⭐⭐</div>
-                 </div>
+                <img src={shaswatpic} alt="Shaswat" />
+                <div>
+                  <strong>Shaswat</strong>
+                  <small>Loved the cold coffee!</small>
+                  <div className="stars">⭐⭐⭐⭐</div>
+                </div>
               </div>
 
               <div className="floating-card card-3">
-                 <img src={arnavpic} alt="Arnav" />
-                 <div>
-                    <strong>Arnav</strong>
-                    <small>Goated Service</small>
-                    <div className="stars">⭐⭐⭐⭐⭐</div>
-                 </div>
+                <img src={arnavpic} alt="Arnav" />
+                <div>
+                  <strong>Arnav</strong>
+                  <small>Goated Service</small>
+                  <div className="stars">⭐⭐⭐⭐⭐</div>
+                </div>
               </div>
             </div>
           </div>
