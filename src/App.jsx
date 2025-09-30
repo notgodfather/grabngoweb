@@ -105,7 +105,7 @@ export default function App() {
               <div className="floating-card card-1">
                 <img src={ankitpic} alt="Ankit" />
                 <div>
-                  <strong>Ankit</strong>
+                  <strong style={{ color: 'black' }}>Ankit</strong>
                   <small>Veg Fried Maggie</small>
                   <div className="stars">⭐⭐⭐⭐⭐</div>
                 </div>
@@ -114,7 +114,7 @@ export default function App() {
               <div className="floating-card card-2">
                 <img src={shaswatpic} alt="Shaswat" />
                 <div>
-                  <strong>Shaswat</strong>
+                  <strong style={{ color: 'black' }}>Shaswat</strong>
                   <small>Loved the cold coffee!</small>
                   <div className="stars">⭐⭐⭐⭐</div>
                 </div>
@@ -123,7 +123,7 @@ export default function App() {
               <div className="floating-card card-3">
                 <img src={arnavpic} alt="Arnav" />
                 <div>
-                  <strong>Arnav</strong>
+                  <strong style={{ color: 'black' }}>Arnav</strong>
                   <small>Goated Service</small>
                   <div className="stars">⭐⭐⭐⭐⭐</div>
                 </div>
