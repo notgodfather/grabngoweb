@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -49,6 +50,20 @@ export default function App() {
           setError('');
           localStorage.setItem('isAuthed', 'true');
           localStorage.setItem('profile', JSON.stringify(userData));
+          const { data, error } = await supabase
+          .from('users')
+          .select('id')
+          .eq('id', userData.sub)  // Using Google user ID (sub) as unique id
+          .single();
+
+        if (!data && !error) {
+          await supabase.from('users').insert({
+            id: userData.sub,
+            email: userData.email,
+            name: userData.name,
+            created_at: new Date().toISOString(),
+          });
+        }
           navigate(from, { replace: true });
         } else {
           setError('Please log in with a valid college email.');
