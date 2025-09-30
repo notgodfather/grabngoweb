@@ -79,7 +79,7 @@ export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout,
             </div>
             <button
               disabled={isCheckingOut}
-              onClick={onCheckout(totalWithService)}
+              onClick={()=>onCheckout(totalWithService)}
               style={{ ...placeOrderButtonStyle, opacity: isCheckingOut ? 0.6 : 1 }}
             >
               {isCheckingOut ? 'Processing...' : 'Place Order'}
