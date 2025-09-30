@@ -70,7 +70,7 @@ body {
   overflow: hidden;
   border-right: 3px solid #ff6ec4; /* blinking cursor */
   width: 0;
-  animation: typing 6s steps(46, end) forwards, blink 0.75s step-end infinite;
+  animation: typing 3s steps(46, end) forwards, blink 0.75s step-end infinite;
 }
 
 @keyframes typing {
