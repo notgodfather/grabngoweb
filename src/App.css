@@ -134,36 +134,29 @@ body {
     text-align: center;
   }
 }
-.quote {
+.quote.typing {
   font-size: 1.4rem;
   font-weight: 600;
-  margin-top: 1rem;
-  text-align: center;
   letter-spacing: 1px;
-  background: linear-gradient(90deg, #ff6ec4, #7873f5, #4fd1c5);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-  animation: glow 3s infinite ease-in-out, float 6s infinite ease-in-out;
+  white-space: nowrap;
+  overflow: hidden;
+  border-right: 3px solid #ff6ec4; /* blinking cursor look */
+  width: 0;
+  animation: typing 6s steps(40, end) forwards, blink 0.75s step-end infinite;
 }
 
-@keyframes glow {
-  0%, 100% {
-    text-shadow: 0 0 15px #ff6ec463, 0 0 25px #7873f563, 0 0 35px #4fd1c563;
-  }
-  50% {
-    text-shadow: 0 0 25px #ffb347, 0 0 35px #87cefa, 0 0 45px #ff6ec4;
-  }
+@keyframes typing {
+  0% { width: 0 }
+  25% { width: 8ch }   /* pause at "A poor va" (8 characters) */
+  35% { width: 8ch }   /* holding the pause */
+  100% { width: 46ch } /* full line typed */
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
+@keyframes blink {
+  from, to { border-color: transparent }
+  50% { border-color: #ff6ec4 }
 }
+
 
 
 
