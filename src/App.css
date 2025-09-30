@@ -63,7 +63,7 @@ body {
   font-size: 1.4rem;
   font-weight: 600;
   letter-spacing: 1px;
-  background: linear-gradient(90deg, #ff6ec4, #7873f5, #4fd1c5);
+  background: black;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   white-space: nowrap;
