@@ -4,6 +4,13 @@ import { formatPrice } from './types';
 export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout, isCheckingOut }) {
   const cartArray = Object.values(cart);
   const total = cartArray.reduce((sum, ci) => sum + Number(ci.item.price) * ci.qty, 0);
+
+  // Calculate 5% service charge
+  const serviceCharge = total * 0.05;
+
+  // Final amount including service charge
+  const totalWithService = total + serviceCharge;
+
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -12,10 +19,12 @@ export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout,
     }, 10);
     return () => clearTimeout(timer);
   }, []);
+
   const handleClose = () => {
     setIsVisible(false);
     setTimeout(onClose, 300); 
   };
+
   const dynamicContentStyle = {
     ...modalContentStyle,
     transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
@@ -56,9 +65,17 @@ export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout,
         </div>
         {cartArray.length > 0 && (
           <div style={{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', background: '#fff' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ fontWeight: 600, fontSize: '1rem' }}>Subtotal</div>
+              <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(total)}</div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontWeight: 600, fontSize: '1rem' }}>Service Charge (5%)</div>
+              <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(serviceCharge)}</div>
+            </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ fontWeight: 600, fontSize: '1rem' }}>Total</div>
-              <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(total)}</div>
+              <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(totalWithService)}</div>
             </div>
             <button
               disabled={isCheckingOut}
@@ -73,6 +90,7 @@ export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout,
     </div>
   );
 }
+
 const modalBackdropStyle = {
   position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
   backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -86,7 +104,7 @@ const modalContentStyle = {
   right: 0,
   bottom: 0,
   width: '100%',
-  maxWidth: 420, 
+  maxWidth: 420,
   background: '#fff',
   boxShadow: '-5px 0 25px rgba(0,0,0,0.1)',
   transition: 'transform 0.3s ease-in-out',
