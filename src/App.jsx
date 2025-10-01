@@ -50,22 +50,6 @@ export default function App() {
           setError('');
           localStorage.setItem('isAuthed', 'true');
           localStorage.setItem('profile', JSON.stringify(userData));
-          const { data, error } = await supabase
-  .from('users')
-  .select('id')
-  .eq('id', userData.sub)
-  .single();
-console.log('Select user:', { data, error });
-
-if (!data && !error) {
-  const { data: insertData, error: insertError } = await supabase.from('users').insert({
-    id: userData.sub,
-    email: userData.email,
-    name: userData.name,
-    created_at: new Date().toISOString(),
-  });
-  console.log('Insert user:', { insertData, insertError });
-}
 
           navigate(from, { replace: true });
         } else {
