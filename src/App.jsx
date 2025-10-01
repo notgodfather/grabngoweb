@@ -3,7 +3,7 @@ import { supabase } from './supabaseClient';
 import { useGoogleLogin, googleLogout } from '@react-oauth/google';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import './App.css';  // make sure the CSS file name matches your import
+import './App.css';
 import ankitpic from './assets/ankitpic.jpeg';
 import arnavpic from './assets/arnavpic.jpeg';
 import shaswatpic from './assets/shaswatpic.jpg';
