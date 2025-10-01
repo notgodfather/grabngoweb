@@ -76,7 +76,7 @@ body {
 @keyframes typing {
   0% { width: 0; }
   20% { width: 9ch; }   /* pause at "A poor va" (8 characters) */
-  28% { width: 9ch; }   /* holding the pause */
+  25% { width: 9ch; }   /* holding the pause */
   100% { width: 46ch; } /* full line typed */
 }
 
