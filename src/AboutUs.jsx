@@ -59,33 +59,7 @@ We tested it during real rush hours, broke it a few times, then made it reliable
         </div>
       </section>
 
-      <section className="section">
-        <div className="container">
-          <h2 className="title-sm">Meet the Team</h2>
-          <p className="muted center">Built by students, for students—crafted with canteen love.</p>
-
-          <div className="team-grid">
-            {team.map((m) => (
-              <article className="card" key={m.name}>
-  <img className="photo" src={m.img} alt={m.name} />
-  <div className="card-body">
-    <div className="card-head">
-      <h3 className="name">{m.name}</h3>
-      <span className="role">{m.role}</span>
-    </div>
-
-    <div className="badge-row">
-      <span className="branch-badge">{m.branch}</span>
-    </div>
-
-    <p className="note">“{m.note}”</p>
-  </div>
-</article>
-
-            ))}
-          </div>
-        </div>
-      </section>
+      
     </main>
   );
 }
