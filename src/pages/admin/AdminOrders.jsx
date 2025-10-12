@@ -4,14 +4,44 @@ import { formatPrice } from '../../types';
 
 const ORDER_STATUSES = ['Pending', 'Preparing', 'Ready for Pickup', 'Completed'];
 
+// Helper: Get today's date string in YYYY-MM-DD
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().slice(0, 10);
+}
+
+// Dashboard Stat Card component
+function StatCard({ label, value, icon, color }) {
+  return (
+    <div style={{
+      background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+      padding: 24, minWidth: 200, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, border: `2px solid ${color || '#eef2f7'}`
+    }}>
+      <div style={{ fontWeight: 500, marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
+      {icon && <div>{icon}</div>}
+    </div>
+  );
+}
+
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Daily revenue (history)
   const [dailyRevenue, setDailyRevenue] = useState([]);
-const [revenueError, setRevenueError] = useState('');
+  const [revenueError, setRevenueError] = useState('');
 
+  // Dashboard stats
+  const [stats, setStats] = useState({
+    totalRevenueToday: 0,
+    ordersCountToday: 0,
+    avgOrderAmount: 0,
+    pendingOrders: 0,
+  });
 
+  // Fetch admin orders
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
@@ -33,19 +63,56 @@ const [revenueError, setRevenueError] = useState('');
     return () => clearInterval(interval);
   }, [fetchOrders]);
 
+  // Fetch Daily Revenue (history table)
   useEffect(() => {
-  const fetchDailyRevenue = async () => {
-    const { data, error } = await supabase
-      .from('daily_revenue') // If you created a view
-      .select('*');
-    if (error) {
-      setRevenueError(error.message);
-    } else {
-      setDailyRevenue(data || []);
-    }
-  };
-  fetchDailyRevenue();
-}, []);
+    const fetchDailyRevenue = async () => {
+      const { data, error } = await supabase
+        .from('daily_revenue') // SQL view (see previous instructions)
+        .select('*');
+      if (error) {
+        setRevenueError(error.message);
+      } else {
+        setDailyRevenue(data || []);
+      }
+    };
+    fetchDailyRevenue();
+  }, []);
+
+  // Fetch Today's Performance Stats
+  useEffect(() => {
+    const fetchStats = async () => {
+      // Get orders placed today
+      const { data: ordersToday, error: ordersTodayErr } = await supabase
+        .from('orders')
+        .select('id, status, order_items(price, qty)')
+        .gte('created_at', todayStr() + 'T00:00:00')
+        .lte('created_at', todayStr() + 'T23:59:59');
+
+      if (ordersTodayErr) {
+        // Handle error
+        setStats(s => ({ ...s, error: ordersTodayErr.message }));
+        return;
+      }
+
+      // Calculate total revenue today and count
+      let totalRevenue = 0, avgOrder = 0, pending = 0, count = ordersToday.length || 0;
+      if (ordersToday && ordersToday.length > 0) {
+        for (const order of ordersToday) {
+          const items = order.order_items || [];
+          totalRevenue += items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+          if (order.status === 'Pending') pending += 1;
+        }
+        avgOrder = count > 0 ? totalRevenue / count : 0;
+      }
+      setStats({
+        totalRevenueToday: totalRevenue,
+        ordersCountToday: count,
+        avgOrderAmount: avgOrder,
+        pendingOrders: pending,
+      });
+    };
+    fetchStats();
+  }, []);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     setOrders(currentOrders =>
@@ -71,31 +138,61 @@ const [revenueError, setRevenueError] = useState('');
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h1 style={{ marginBottom: 24 }}>Admin - Order Management</h1>
-      <div style={{ marginBottom: 32 }}>
-  <h2>Daily Revenue History</h2>
-  {revenueError ? (
-    <div style={{ color: '#b91c1c' }}>Error: {revenueError}</div>
-  ) : (
-    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Total Revenue</th>
-        </tr>
-      </thead>
-      <tbody>
-        {dailyRevenue.map(day => (
-          <tr key={day.order_date}>
-            <td>{day.order_date}</td>
-            <td>{formatPrice(day.revenue)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  )}
-</div>
 
-      
+      {/* Performance Dashboard Cards */}
+      <div style={{ display: 'flex', gap: 24, marginBottom: 36 }}>
+        <StatCard
+          label="Total Revenue Today"
+          value={formatPrice(stats.totalRevenueToday)}
+          icon={<span style={{ fontSize: 20, background: "#dcfce7", padding:10, borderRadius:10 }}>💵</span>}
+          color="#22c55e"
+        />
+        <StatCard
+          label="Orders Count"
+          value={stats.ordersCountToday}
+          icon={<span style={{ fontSize: 20, background: "#e0edfd", padding:10, borderRadius:10 }}>🛒</span>}
+          color="#3b82f6"
+        />
+        <StatCard
+          label="Average Order Amount"
+          value={formatPrice(stats.avgOrderAmount)}
+          icon={<span style={{ fontSize: 20, background: "#e0edfd", padding:10, borderRadius:10 }}>📈</span>}
+          color="#0ea5e9"
+        />
+        <StatCard
+          label="Pending Orders"
+          value={stats.pendingOrders}
+          icon={<span style={{ fontSize: 20, background: "#fff7ed", padding:10, borderRadius:10 }}>⏳</span>}
+          color="#fbbf24"
+        />
+      </div>
+
+      {/* Daily Revenue History Table */}
+      <div style={{ marginBottom: 32 }}>
+        <h2>Daily Revenue History</h2>
+        {revenueError ? (
+          <div style={{ color: '#b91c1c' }}>Error: {revenueError}</div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Total Revenue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dailyRevenue.map(day => (
+                <tr key={day.order_date}>
+                  <td>{day.order_date}</td>
+                  <td>{formatPrice(day.revenue)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Orders List */}
       <div style={{ display: 'grid', gap: 20 }}>
         {orders.length === 0 ? (
           <p>No orders found.</p>
@@ -115,7 +212,6 @@ const [revenueError, setRevenueError] = useState('');
                   {new Date(order.created_at).toLocaleString()}
                 </div>
               </div>
-
               <div style={{ padding: '12px 16px', borderTop: '1px solid #eef2f7', borderBottom: '1px solid #eef2f7' }}>
                 {(order.order_items || []).map(item => (
                   <div key={item.id} style={lineItemStyle}>
@@ -125,7 +221,6 @@ const [revenueError, setRevenueError] = useState('');
                   </div>
                 ))}
               </div>
-
               <div style={orderFooterStyle}>
                 <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>
                   Total: {formatPrice((order.order_items || []).reduce((sum, i) => sum + i.price * i.qty, 0))}
@@ -150,6 +245,7 @@ const [revenueError, setRevenueError] = useState('');
     </div>
   );
 }
+
 const orderCardStyle = {
   background: '#fff',
   border: '1px solid #eef2f7',
