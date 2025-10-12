@@ -28,7 +28,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   const [stats, setStats] = useState({
     totalRevenueToday: 0,
     ordersCountToday: 0,
@@ -82,7 +82,7 @@ export default function AdminOrders() {
         for (const order of ordersToday) {
           const items = order.order_items || [];
           totalRevenue += items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-          if (order.status === 'Pending') pending += 1;
+          if (order.status === 'Preparing') pending += 1;
         }
         avgOrder = count > 0 ? totalRevenue / count : 0;
       }
