@@ -150,31 +150,6 @@ export default function AdminOrders() {
         />
       </div>
 
-      {/* Daily Revenue History Table */}
-      <div style={{ marginBottom: 32 }}>
-        <h2>Daily Revenue History</h2>
-        {revenueError ? (
-          <div style={{ color: '#b91c1c' }}>Error: {revenueError}</div>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Total Revenue</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dailyRevenue.map(day => (
-                <tr key={day.order_date}>
-                  <td>{day.order_date}</td>
-                  <td>{formatPrice(day.revenue)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-
       {/* Orders List */}
       <div style={{ display: 'grid', gap: 20 }}>
         {orders.length === 0 ? (
