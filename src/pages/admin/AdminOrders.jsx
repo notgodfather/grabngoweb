@@ -4,11 +4,13 @@ import { formatPrice } from '../../types';
 
 const ORDER_STATUSES = ['Pending', 'Preparing', 'Ready for Pickup', 'Completed'];
 
+// Helper: Get today's date string in YYYY-MM-DD
 function todayStr() {
   const d = new Date();
   return d.toISOString().slice(0, 10);
 }
 
+// Dashboard Stat Card component
 function StatCard({ label, value, icon, color }) {
   return (
     <div style={{
@@ -22,23 +24,11 @@ function StatCard({ label, value, icon, color }) {
   );
 }
 
-async function setAllItemsAvailable(available) {
-  const { data: items, error } = await supabase.from('food_items').select('id');
-  if (error) return alert('Failed to fetch food items');
-  if (items && items.length > 0) {
-    const ids = items.map(item => item.id);
-    const { error: updateErr } = await supabase
-      .from('food_items')
-      .update({ is_available: available })
-      .in('id', ids);
-    if (updateErr) alert('Failed to update item availability');
-  }
-}
-
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
   const [stats, setStats] = useState({
     totalRevenueToday: 0,
     ordersCountToday: 0,
@@ -46,10 +36,11 @@ export default function AdminOrders() {
     pendingOrders: 0,
   });
 
-  const [acceptOrders, setAcceptOrders] = useState(false); // Default to OFF
+  // Toggle for accepting online orders
+  const [acceptOrders, setAcceptOrders] = useState(true);
   const [toggleLoading, setToggleLoading] = useState(true);
 
-  // Fetch setting and sync item stock status
+  // Fetch current acceptOrders toggle from Supabase settings
   const fetchAcceptOrdersSetting = useCallback(async () => {
     setToggleLoading(true);
     const { data, error } = await supabase
@@ -57,44 +48,38 @@ export default function AdminOrders() {
       .select('value')
       .eq('key', 'accept_orders')
       .single();
+
     if (!error && data) {
       setAcceptOrders(data.value === 'true');
-      await setAllItemsAvailable(data.value === 'true');
     } else {
-      setAcceptOrders(false); // Default to OFF
-      await setAllItemsAvailable(false);
+      // Default to true if no setting found or error
+      setAcceptOrders(true);
     }
     setToggleLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchOrders();
-    fetchAcceptOrdersSetting();
-    const interval = setInterval(fetchOrders, 10000);
-    return () => clearInterval(interval);
-  }, [fetchOrders, fetchAcceptOrdersSetting]);
-
-  // Keep items in sync with toggle whenever it changes (except on initial load)
-  useEffect(() => {
-    if (!toggleLoading) setAllItemsAvailable(acceptOrders);
-  }, [acceptOrders, toggleLoading]);
-
+  // Save toggle change to Supabase settings
   const handleToggleChange = async (e) => {
     const newValue = e.target.checked;
     setToggleLoading(true);
-    await supabase
+    const { error } = await supabase
       .from('settings')
       .upsert([{ key: 'accept_orders', value: newValue.toString() }]);
-    setAcceptOrders(newValue);
-    await setAllItemsAvailable(newValue);
+    if (error) {
+      alert('Failed to update toggle');
+    } else {
+      setAcceptOrders(newValue);
+    }
     setToggleLoading(false);
   };
 
+  // Fetch admin orders
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
       .select('*, order_items(*, food_items(name))')
       .order('created_at', { ascending: false });
+
     if (error) {
       setError(error.message);
       console.error("Error fetching orders:", error);
@@ -105,16 +90,27 @@ export default function AdminOrders() {
   }, []);
 
   useEffect(() => {
+    fetchOrders();
+    fetchAcceptOrdersSetting();
+
+    const interval = setInterval(fetchOrders, 10000);
+    return () => clearInterval(interval);
+  }, [fetchOrders, fetchAcceptOrdersSetting]);
+
+  // Fetch Today's Performance Stats
+  useEffect(() => {
     const fetchStats = async () => {
       const { data: ordersToday, error: ordersTodayErr } = await supabase
         .from('orders')
         .select('id, status, order_items(price, qty)')
         .gte('created_at', todayStr() + 'T00:00:00')
         .lte('created_at', todayStr() + 'T23:59:59');
+
       if (ordersTodayErr) {
         setStats(s => ({ ...s, error: ordersTodayErr.message }));
         return;
       }
+
       let totalRevenue = 0, avgOrder = 0, pending = 0, count = ordersToday.length || 0;
       if (ordersToday && ordersToday.length > 0) {
         for (const order of ordersToday) {
@@ -134,16 +130,19 @@ export default function AdminOrders() {
     fetchStats();
   }, []);
 
+  // Handler to update order status from dropdown
   const handleStatusUpdate = async (orderId, newStatus) => {
     setOrders(currentOrders =>
       currentOrders.map(order =>
         order.id === orderId ? { ...order, status: newStatus } : order
       )
     );
+
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
       .eq('id', orderId);
+
     if (error) {
       alert(`Error updating status: ${error.message}`);
       fetchOrders();
@@ -156,6 +155,8 @@ export default function AdminOrders() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h1 style={{ marginBottom: 24 }}>Admin - Order Management</h1>
+
+      {/* Accept Orders Toggle */}
       <label style={{ display: 'flex', alignItems: 'center', marginBottom: 24, fontWeight: 600 }}>
         <input
           type="checkbox"
@@ -166,6 +167,8 @@ export default function AdminOrders() {
         />
         Accept Orders Online
       </label>
+
+      {/* Performance Dashboard Cards */}
       <div style={{ display: 'flex', gap: 24, marginBottom: 36 }}>
         <StatCard
           label="Total Revenue Today"
@@ -192,6 +195,8 @@ export default function AdminOrders() {
           color="#fbbf24"
         />
       </div>
+
+      {/* Orders List */}
       <div style={{ display: 'grid', gap: 20 }}>
         {orders.length === 0 ? (
           <p>No orders found.</p>
