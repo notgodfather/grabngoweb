@@ -36,6 +36,43 @@ export default function AdminOrders() {
     pendingOrders: 0,
   });
 
+  // Toggle for accepting online orders
+  const [acceptOrders, setAcceptOrders] = useState(true);
+  const [toggleLoading, setToggleLoading] = useState(true);
+
+  // Fetch current acceptOrders toggle from Supabase settings
+  const fetchAcceptOrdersSetting = useCallback(async () => {
+    setToggleLoading(true);
+    const { data, error } = await supabase
+      .from('settings')
+      .select('value')
+      .eq('key', 'accept_orders')
+      .single();
+
+    if (!error && data) {
+      setAcceptOrders(data.value === 'true');
+    } else {
+      // Default to true if no setting found or error
+      setAcceptOrders(true);
+    }
+    setToggleLoading(false);
+  }, []);
+
+  // Save toggle change to Supabase settings
+  const handleToggleChange = async (e) => {
+    const newValue = e.target.checked;
+    setToggleLoading(true);
+    const { error } = await supabase
+      .from('settings')
+      .upsert([{ key: 'accept_orders', value: newValue.toString() }]);
+    if (error) {
+      alert('Failed to update toggle');
+    } else {
+      setAcceptOrders(newValue);
+    }
+    setToggleLoading(false);
+  };
+
   // Fetch admin orders
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
@@ -54,16 +91,15 @@ export default function AdminOrders() {
 
   useEffect(() => {
     fetchOrders();
+    fetchAcceptOrdersSetting();
+
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
-  }, [fetchOrders]);
-
-  // Fetch Daily Revenue (history table)
+  }, [fetchOrders, fetchAcceptOrdersSetting]);
 
   // Fetch Today's Performance Stats
   useEffect(() => {
     const fetchStats = async () => {
-      // Get orders placed today
       const { data: ordersToday, error: ordersTodayErr } = await supabase
         .from('orders')
         .select('id, status, order_items(price, qty)')
@@ -71,12 +107,10 @@ export default function AdminOrders() {
         .lte('created_at', todayStr() + 'T23:59:59');
 
       if (ordersTodayErr) {
-        // Handle error
         setStats(s => ({ ...s, error: ordersTodayErr.message }));
         return;
       }
 
-      // Calculate total revenue today and count
       let totalRevenue = 0, avgOrder = 0, pending = 0, count = ordersToday.length || 0;
       if (ordersToday && ordersToday.length > 0) {
         for (const order of ordersToday) {
@@ -96,6 +130,7 @@ export default function AdminOrders() {
     fetchStats();
   }, []);
 
+  // Handler to update order status from dropdown
   const handleStatusUpdate = async (orderId, newStatus) => {
     setOrders(currentOrders =>
       currentOrders.map(order =>
@@ -120,6 +155,18 @@ export default function AdminOrders() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h1 style={{ marginBottom: 24 }}>Admin - Order Management</h1>
+
+      {/* Accept Orders Toggle */}
+      <label style={{ display: 'flex', alignItems: 'center', marginBottom: 24, fontWeight: 600 }}>
+        <input
+          type="checkbox"
+          checked={acceptOrders}
+          onChange={handleToggleChange}
+          disabled={toggleLoading}
+          style={{ width: 20, height: 20, marginRight: 8, cursor: toggleLoading ? 'not-allowed' : 'pointer' }}
+        />
+        Accept Orders Online
+      </label>
 
       {/* Performance Dashboard Cards */}
       <div style={{ display: 'flex', gap: 24, marginBottom: 36 }}>
