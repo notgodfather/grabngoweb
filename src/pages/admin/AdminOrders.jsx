@@ -8,6 +8,9 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [dailyRevenue, setDailyRevenue] = useState([]);
+const [revenueError, setRevenueError] = useState('');
+
 
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
@@ -29,6 +32,20 @@ export default function AdminOrders() {
     const interval = setInterval(fetchOrders, 10000);
     return () => clearInterval(interval);
   }, [fetchOrders]);
+
+  useEffect(() => {
+  const fetchDailyRevenue = async () => {
+    const { data, error } = await supabase
+      .from('daily_revenue') // If you created a view
+      .select('*');
+    if (error) {
+      setRevenueError(error.message);
+    } else {
+      setDailyRevenue(data || []);
+    }
+  };
+  fetchDailyRevenue();
+}, []);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     setOrders(currentOrders =>
@@ -54,6 +71,30 @@ export default function AdminOrders() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h1 style={{ marginBottom: 24 }}>Admin - Order Management</h1>
+      <div style={{ marginBottom: 32 }}>
+  <h2>Daily Revenue History</h2>
+  {revenueError ? (
+    <div style={{ color: '#b91c1c' }}>Error: {revenueError}</div>
+  ) : (
+    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Total Revenue</th>
+        </tr>
+      </thead>
+      <tbody>
+        {dailyRevenue.map(day => (
+          <tr key={day.order_date}>
+            <td>{day.order_date}</td>
+            <td>{formatPrice(day.revenue)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  )}
+</div>
+
       
       <div style={{ display: 'grid', gap: 20 }}>
         {orders.length === 0 ? (
