@@ -24,6 +24,23 @@ function StatCard({ label, value, icon, color }) {
   );
 }
 
+// Helper to set all items' is_available quickly
+async function toggleAllItemsAvailable(makeAvailable) {
+  const { data: items, error } = await supabase.from('food_items').select('id');
+  if (error) {
+    alert('Failed to fetch food items');
+    return;
+  }
+  if (items && items.length > 0) {
+    const ids = items.map(item => item.id);
+    const { error: updateErr } = await supabase
+      .from('food_items')
+      .update({ is_available: makeAvailable })
+      .in('id', ids);
+    if (updateErr) alert('Failed to update item availability');
+  }
+}
+
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,28 +65,26 @@ export default function AdminOrders() {
       .select('value')
       .eq('key', 'accept_orders')
       .single();
-
     if (!error && data) {
       setAcceptOrders(data.value === 'true');
     } else {
-      // Default to true if no setting found or error
-      setAcceptOrders(true);
+      setAcceptOrders(true); // default
     }
     setToggleLoading(false);
   }, []);
 
-  // Save toggle change to Supabase settings
+  // Save toggle and update all items' availability too
   const handleToggleChange = async (e) => {
-    const newValue = e.target.checked;
+    const newValue = e.target.checked; // true if accepting, false if closing
     setToggleLoading(true);
-    const { error } = await supabase
+    // Save toggle to settings
+    await supabase
       .from('settings')
       .upsert([{ key: 'accept_orders', value: newValue.toString() }]);
-    if (error) {
-      alert('Failed to update toggle');
-    } else {
-      setAcceptOrders(newValue);
-    }
+    // Set all food_items is_available accordingly
+    await toggleAllItemsAvailable(newValue);
+
+    setAcceptOrders(newValue);
     setToggleLoading(false);
   };
 
