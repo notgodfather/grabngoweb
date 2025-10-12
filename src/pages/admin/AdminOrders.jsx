@@ -29,10 +29,6 @@ export default function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Daily revenue (history)
-  const [dailyRevenue, setDailyRevenue] = useState([]);
-  const [revenueError, setRevenueError] = useState('');
-
   // Dashboard stats
   const [stats, setStats] = useState({
     totalRevenueToday: 0,
@@ -64,19 +60,6 @@ export default function AdminOrders() {
   }, [fetchOrders]);
 
   // Fetch Daily Revenue (history table)
-  useEffect(() => {
-    const fetchDailyRevenue = async () => {
-      const { data, error } = await supabase
-        .from('daily_revenue') // SQL view (see previous instructions)
-        .select('*');
-      if (error) {
-        setRevenueError(error.message);
-      } else {
-        setDailyRevenue(data || []);
-      }
-    };
-    fetchDailyRevenue();
-  }, []);
 
   // Fetch Today's Performance Stats
   useEffect(() => {
