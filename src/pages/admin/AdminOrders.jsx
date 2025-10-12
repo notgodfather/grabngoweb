@@ -28,8 +28,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  // Dashboard stats
+  
   const [stats, setStats] = useState({
     totalRevenueToday: 0,
     ordersCountToday: 0,
