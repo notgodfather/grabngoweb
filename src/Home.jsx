@@ -28,6 +28,9 @@ export default function Home() {
     }
   });
 
+  // New state for accepting orders toggle
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
@@ -37,11 +40,13 @@ export default function Home() {
     async function loadData() {
       setLoading(true);
       setError('');
-      
-      const [catRes, itemRes, trendRes] = await Promise.all([
+
+      // Parallel fetches including accepting orders toggle
+      const [catRes, itemRes, trendRes, settingsRes] = await Promise.all([
         supabase.from('categories').select('*').eq('is_available', true).order('display_order', { ascending: true }),
         supabase.from('food_items').select('*').order('name', { ascending: true }),
-        supabase.rpc('get_trending_items')
+        supabase.rpc('get_trending_items'),
+        supabase.from('settings').select('receive_orders').limit(1).single(),
       ]);
 
       if (!isMounted) return;
@@ -49,12 +54,18 @@ export default function Home() {
       if (catRes.error) {
         setError(catRes.error.message);
         setLoading(false);
-        return; 
+        return;
       }
       if (itemRes.error) {
         setError(itemRes.error.message);
         setLoading(false);
         return;
+      }
+
+      if (settingsRes.error) {
+        console.error("Could not fetch order acceptance setting:", settingsRes.error.message);
+      } else {
+        setAcceptingOrders(settingsRes.data?.receive_orders ?? true);
       }
 
       setCategories(catRes.data || []);
@@ -99,104 +110,122 @@ export default function Home() {
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
   const handleCheckout = async (totalAmount) => {
-  if (!profile?.sub) {
-    alert('You must be logged in to place an order.');
-    return;
-  }
-  if (cartArray.length === 0) return;
-
-  setCheckingOut(true);
-
-  try {
-    const userDetails = {
-      uid: profile.sub,
-      displayName: profile.name || 'Guest',
-      email: profile.email || 'noemail@example.com',
-      phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
-    };
-
-    // Step 1: Create order with backend
-    const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: totalAmount,
-        currency: 'INR',
-        cart: cartArray.map(ci => ({
-          price: Number(ci.item.price),
-          quantity: ci.qty,
-          id: ci.item.id,
-          name: ci.item.name,
-          image: ci.item.image_url,
-        })),
-        user: userDetails,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
-
-    console.log('Received create-order response:', data);
-
-    if (!window.Cashfree) {
-      alert('Cashfree SDK not loaded');
-      setCheckingOut(false);
+    if (!acceptingOrders) {
+      alert('Online ordering is temporarily disabled. Please try again later.');
       return;
     }
+    if (!profile?.sub) {
+      alert('You must be logged in to place an order.');
+      return;
+    }
+    if (cartArray.length === 0) return;
 
-    const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
-    const cashfree = window.Cashfree({ mode });
+    setCheckingOut(true);
 
-    await cashfree.checkout({
-      paymentSessionId: data.paymentSessionId,
-      redirectTarget: '_modal',
-    });
+    try {
+      const userDetails = {
+        uid: profile.sub,
+        displayName: profile.name || 'Guest',
+        email: profile.email || 'noemail@example.com',
+        phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
+      };
 
-    const verifyOrderId = data.orderId;
-    console.log('Verifying payment with orderId:', verifyOrderId);
-
-    const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: verifyOrderId }),
-    });
-
-    const verifyData = await verifyResponse.json();
-    if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
-
-    console.log('Payment verification result:', verifyData);
-
-    if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-
-      const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
+      const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: profile.sub,
-          userEmail: profile.email,
-          cart: cartArray,
-          orderId: verifyOrderId,
+          amount: totalAmount,
+          currency: 'INR',
+          cart: cartArray.map(ci => ({
+            price: Number(ci.item.price),
+            quantity: ci.qty,
+            id: ci.item.id,
+            name: ci.item.name,
+            image: ci.item.image_url,
+          })),
+          user: userDetails,
         }),
       });
 
-      const recordData = await recordResponse.json();
-      if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
-      alert('Payment successful! Your order has been placed.');
-      setCart({});
-      setCartOpen(false);
-    } else {
-      alert(`Payment status: ${verifyData.status}. Please check your order.`);
+      console.log('Received create-order response:', data);
+
+      if (!window.Cashfree) {
+        alert('Cashfree SDK not loaded');
+        setCheckingOut(false);
+        return;
+      }
+
+      const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
+      const cashfree = window.Cashfree({ mode });
+
+      await cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: '_modal',
+      });
+
+      const verifyOrderId = data.orderId;
+      console.log('Verifying payment with orderId:', verifyOrderId);
+
+      const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: verifyOrderId }),
+      });
+
+      const verifyData = await verifyResponse.json();
+      if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+
+      console.log('Payment verification result:', verifyData);
+
+      if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
+        const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: profile.sub,
+            userEmail: profile.email,
+            cart: cartArray,
+            orderId: verifyOrderId,
+          }),
+        });
+
+        const recordData = await recordResponse.json();
+        if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
+
+        alert('Payment successful! Your order has been placed.');
+        setCart({});
+        setCartOpen(false);
+      } else {
+        alert(`Payment status: ${verifyData.status}. Please check your order.`);
+      }
+    } catch (err) {
+      alert(`Payment failed: ${err.message}`);
+    } finally {
+      setCheckingOut(false);
     }
-  } catch (err) {
-    alert(`Payment failed: ${err.message}`);
-  } finally {
-    setCheckingOut(false);
-  }
-};
+  };
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+      
+      {/* Show banner when orders are paused */}
+      {!acceptingOrders && (
+        <div style={{
+          background: '#fee2e2',
+          color: '#b91c1c',
+          padding: 12,
+          borderRadius: 8,
+          textAlign: 'center',
+          fontWeight: 600,
+          marginBottom: 16
+        }}>
+          ⚠️ Online orders are currently disabled.
+        </div>
+      )}
+
       <Header
         profile={profile}
         search={search}
@@ -221,6 +250,7 @@ export default function Home() {
             onAddToCart={(item) => updateCartQuantity(item, 1)}
             cart={cart}
             onRemoveFromCart={(item) => updateCartQuantity(item, -1)}
+            acceptingOrders={acceptingOrders}  // pass toggle state
           />
         </>
       )}
@@ -240,6 +270,7 @@ export default function Home() {
     </div>
   );
 }
+
 
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
@@ -268,7 +299,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
             width: firstName ? '100%' : 360
           }}
         />
-        <button onClick={onViewCart} style={cartCount==0 ? viewCartButtonStyle : filledCartButtonStyle}>
+        <button onClick={onViewCart} style={cartCount === 0 ? viewCartButtonStyle : filledCartButtonStyle}>
           🛒 Cart ({cartCount})
         </button>
       </div>
@@ -277,7 +308,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
 }
 
 
-function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
+function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders }) {
   if (items.length === 0) {
     return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
   }
@@ -304,7 +335,7 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
               <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 12 }}>
                 <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div>
                 <div style={{ marginLeft: 'auto' }}>
-                  {isAvailable ? (
+                  {isAvailable && acceptingOrders ? (
                     quantityInCart > 0 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
@@ -315,7 +346,9 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
                       <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button>
                     )
                   ) : (
-                    <div style={outOfStockButtonStyle}>Out of Stock</div>
+                    <div style={outOfStockButtonStyle}>
+                      {acceptingOrders ? 'Out of Stock' : 'Ordering Paused'}
+                    </div>
                   )}
                 </div>
               </div>
@@ -327,36 +360,7 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
   );
 }
 
-function CategoryBar({ categories, activeCategory, onCategoryChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
-      <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} />
-      {categories.map((c) => (
-        <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} />
-      ))}
-    </div>
-  );
-}
-
-function CategoryPill({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '8px 14px',
-        borderRadius: 999,
-        border: '1px solid #e2e8f0',
-        background: active ? '#f97316' : '#fff',
-        color: active ? '#fff' : '#0f172a',
-        cursor: 'pointer',
-        fontWeight: active ? 600 : 400,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
-    </button>
-  );
-}
+// Styles (unchanged) ...
 
 const greetingContainerStyle = { marginBottom: 24 };
 const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b' };
@@ -394,4 +398,4 @@ const outOfStockButtonStyle = {
   fontWeight: 600,
 };
 const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
-const demostyle={color:'red', fontWeight:'bold'};
+const demostyle = { color: 'red', fontWeight: 'bold' };

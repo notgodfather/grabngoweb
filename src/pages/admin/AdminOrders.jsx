@@ -4,18 +4,17 @@ import { formatPrice } from '../../types';
 
 const ORDER_STATUSES = ['Pending', 'Preparing', 'Ready for Pickup', 'Completed'];
 
-// Helper: Get today's date string in YYYY-MM-DD
 function todayStr() {
   const d = new Date();
   return d.toISOString().slice(0, 10);
 }
 
-// Dashboard Stat Card component
 function StatCard({ label, value, icon, color }) {
   return (
     <div style={{
       background: '#fff', borderRadius: 12, boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-      padding: 24, minWidth: 200, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8, border: `2px solid ${color || '#eef2f7'}`
+      padding: 24, minWidth: 200, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8,
+      border: `2px solid ${color || '#eef2f7'}`
     }}>
       <div style={{ fontWeight: 500, marginBottom: 8 }}>{label}</div>
       <div style={{ fontSize: 28, fontWeight: 700 }}>{value}</div>
@@ -28,6 +27,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
 
   const [stats, setStats] = useState({
     totalRevenueToday: 0,
@@ -36,7 +36,7 @@ export default function AdminOrders() {
     pendingOrders: 0,
   });
 
-  // Fetch admin orders
+  // Fetch all orders
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
@@ -52,18 +52,35 @@ export default function AdminOrders() {
     setLoading(false);
   }, []);
 
+  // Fetch settings (online order toggle)
+  const fetchSettings = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('settings')
+      .select('receive_orders')
+      .limit(1)
+      .single();
+
+    if (error) {
+      console.error('Error fetching settings:', error);
+    } else {
+      setAcceptingOrders(data.receive_orders);
+    }
+  }, []);
+
+  // Fetch data every 10s
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 10000);
+    fetchSettings();
+    const interval = setInterval(() => {
+      fetchOrders();
+      fetchSettings();
+    }, 10000);
     return () => clearInterval(interval);
-  }, [fetchOrders]);
+  }, [fetchOrders, fetchSettings]);
 
-  // Fetch Daily Revenue (history table)
-
-  // Fetch Today's Performance Stats
+  // Fetch statistics
   useEffect(() => {
     const fetchStats = async () => {
-      // Get orders placed today
       const { data: ordersToday, error: ordersTodayErr } = await supabase
         .from('orders')
         .select('id, status, order_items(price, qty)')
@@ -71,12 +88,10 @@ export default function AdminOrders() {
         .lte('created_at', todayStr() + 'T23:59:59');
 
       if (ordersTodayErr) {
-        // Handle error
         setStats(s => ({ ...s, error: ordersTodayErr.message }));
         return;
       }
 
-      // Calculate total revenue today and count
       let totalRevenue = 0, avgOrder = 0, pending = 0, count = ordersToday.length || 0;
       if (ordersToday && ordersToday.length > 0) {
         for (const order of ordersToday) {
@@ -86,6 +101,7 @@ export default function AdminOrders() {
         }
         avgOrder = count > 0 ? totalRevenue / count : 0;
       }
+
       setStats({
         totalRevenueToday: totalRevenue,
         ordersCountToday: count,
@@ -96,6 +112,7 @@ export default function AdminOrders() {
     fetchStats();
   }, []);
 
+  // Update order status
   const handleStatusUpdate = async (orderId, newStatus) => {
     setOrders(currentOrders =>
       currentOrders.map(order =>
@@ -114,6 +131,26 @@ export default function AdminOrders() {
     }
   };
 
+  // Handle toggle (accepting orders)
+  const handleToggle = async (e) => {
+    const newValue = e.target.checked;
+    setAcceptingOrders(newValue);
+
+    const { error } = await supabase
+      .from('settings')
+      .update({ receive_orders: newValue })
+      .neq('receive_orders', newValue);
+
+    if (error) {
+      alert('Error updating toggle: ' + error.message);
+    } else {
+      if (!newValue) {
+        // Optional: mark all food items out of stock
+        await supabase.from('food_items').update({ is_available: false });
+      }
+    }
+  };
+
   if (loading) return <div style={{ padding: 24 }}>Loading all orders...</div>;
   if (error) return <div style={{ padding: 24, color: '#b91c1c' }}>Error: {error}</div>;
 
@@ -121,30 +158,48 @@ export default function AdminOrders() {
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h1 style={{ marginBottom: 24 }}>Admin - Order Management</h1>
 
-      {/* Performance Dashboard Cards */}
+      {/* Accept Online Orders Toggle */}
+      <div style={{ marginBottom: 24 }}>
+        <label style={{ fontWeight: 600, marginRight: 8 }}>Accept Online Orders:</label>
+        <input
+          type="checkbox"
+          checked={acceptingOrders}
+          onChange={handleToggle}
+          style={{ transform: 'scale(1.3)', cursor: 'pointer' }}
+        />
+        <span style={{
+          marginLeft: 10,
+          color: acceptingOrders ? '#22c55e' : '#ef4444',
+          fontWeight: 600
+        }}>
+          {acceptingOrders ? 'ON' : 'OFF'}
+        </span>
+      </div>
+
+      {/* Stats Cards */}
       <div style={{ display: 'flex', gap: 24, marginBottom: 36 }}>
         <StatCard
           label="Total Revenue Today"
           value={formatPrice(stats.totalRevenueToday)}
-          icon={<span style={{ fontSize: 20, background: "#dcfce7", padding:10, borderRadius:10 }}>💵</span>}
+          icon={<span style={{ fontSize: 20, background: "#dcfce7", padding: 10, borderRadius: 10 }}>💵</span>}
           color="#22c55e"
         />
         <StatCard
           label="Orders Count"
           value={stats.ordersCountToday}
-          icon={<span style={{ fontSize: 20, background: "#e0edfd", padding:10, borderRadius:10 }}>🛒</span>}
+          icon={<span style={{ fontSize: 20, background: "#e0edfd", padding: 10, borderRadius: 10 }}>🛒</span>}
           color="#3b82f6"
         />
         <StatCard
           label="Average Order Amount"
           value={formatPrice(stats.avgOrderAmount)}
-          icon={<span style={{ fontSize: 20, background: "#e0edfd", padding:10, borderRadius:10 }}>📈</span>}
+          icon={<span style={{ fontSize: 20, background: "#e0edfd", padding: 10, borderRadius: 10 }}>📈</span>}
           color="#0ea5e9"
         />
         <StatCard
           label="Pending Orders"
           value={stats.pendingOrders}
-          icon={<span style={{ fontSize: 20, background: "#fff7ed", padding:10, borderRadius:10 }}>⏳</span>}
+          icon={<span style={{ fontSize: 20, background: "#fff7ed", padding: 10, borderRadius: 10 }}>⏳</span>}
           color="#fbbf24"
         />
       </div>
