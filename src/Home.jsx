@@ -28,6 +28,9 @@ export default function Home() {
     }
   });
 
+  // Online orders toggle: fetch from Supabase
+  const [acceptingOrders, setAcceptingOrders] = useState(true);
+
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
@@ -37,11 +40,12 @@ export default function Home() {
     async function loadData() {
       setLoading(true);
       setError('');
-      
-      const [catRes, itemRes, trendRes] = await Promise.all([
+
+      const [catRes, itemRes, trendRes, settingsRes] = await Promise.all([
         supabase.from('categories').select('*').eq('is_available', true).order('display_order', { ascending: true }),
         supabase.from('food_items').select('*').order('name', { ascending: true }),
-        supabase.rpc('get_trending_items')
+        supabase.rpc('get_trending_items'),
+        supabase.from('settings').select('receive_orders').limit(1).single(),
       ]);
 
       if (!isMounted) return;
@@ -49,12 +53,17 @@ export default function Home() {
       if (catRes.error) {
         setError(catRes.error.message);
         setLoading(false);
-        return; 
+        return;
       }
       if (itemRes.error) {
         setError(itemRes.error.message);
         setLoading(false);
         return;
+      }
+      if (settingsRes.error) {
+        console.error("Could not fetch order acceptance setting:", settingsRes.error.message);
+      } else {
+        setAcceptingOrders(settingsRes.data?.receive_orders ?? true);
       }
 
       setCategories(catRes.data || []);
@@ -69,7 +78,10 @@ export default function Home() {
       setLoading(false);
     }
     loadData();
-    return () => { isMounted = false; };
+
+    // (optional) Refresh toggle every 30s
+    const interval = setInterval(loadData, 30000);
+    return () => { isMounted = false; clearInterval(interval); };
   }, []);
 
   const filteredItems = useMemo(() => {
@@ -85,7 +97,6 @@ export default function Home() {
     setCart((c) => {
       const currentQty = c[item.id]?.qty || 0;
       const newQty = currentQty + direction;
-
       if (newQty <= 0) {
         const clone = { ...c };
         delete clone[item.id];
@@ -99,104 +110,115 @@ export default function Home() {
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
   const handleCheckout = async (totalAmount) => {
-  if (!profile?.sub) {
-    alert('You must be logged in to place an order.');
-    return;
-  }
-  if (cartArray.length === 0) return;
-
-  setCheckingOut(true);
-
-  try {
-    const userDetails = {
-      uid: profile.sub,
-      displayName: profile.name || 'Guest',
-      email: profile.email || 'noemail@example.com',
-      phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
-    };
-
-    // Step 1: Create order with backend
-    const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: totalAmount,
-        currency: 'INR',
-        cart: cartArray.map(ci => ({
-          price: Number(ci.item.price),
-          quantity: ci.qty,
-          id: ci.item.id,
-          name: ci.item.name,
-          image: ci.item.image_url,
-        })),
-        user: userDetails,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
-
-    console.log('Received create-order response:', data);
-
-    if (!window.Cashfree) {
-      alert('Cashfree SDK not loaded');
-      setCheckingOut(false);
+    if (!acceptingOrders) {
+      alert('Online ordering is temporarily disabled. Please try again later.');
       return;
     }
+    if (!profile?.sub) {
+      alert('You must be logged in to place an order.');
+      return;
+    }
+    if (cartArray.length === 0) return;
 
-    const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
-    const cashfree = window.Cashfree({ mode });
+    setCheckingOut(true);
 
-    await cashfree.checkout({
-      paymentSessionId: data.paymentSessionId,
-      redirectTarget: '_modal',
-    });
+    try {
+      const userDetails = {
+        uid: profile.sub,
+        displayName: profile.name || 'Guest',
+        email: profile.email || 'noemail@example.com',
+        phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
+      };
 
-    const verifyOrderId = data.orderId;
-    console.log('Verifying payment with orderId:', verifyOrderId);
-
-    const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ orderId: verifyOrderId }),
-    });
-
-    const verifyData = await verifyResponse.json();
-    if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
-
-    console.log('Payment verification result:', verifyData);
-
-    if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-
-      const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
+      const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: profile.sub,
-          userEmail: profile.email,
-          cart: cartArray,
-          orderId: verifyOrderId,
+          amount: totalAmount,
+          currency: 'INR',
+          cart: cartArray.map(ci => ({
+            price: Number(ci.item.price),
+            quantity: ci.qty,
+            id: ci.item.id,
+            name: ci.item.name,
+            image: ci.item.image_url,
+          })),
+          user: userDetails,
         }),
       });
 
-      const recordData = await recordResponse.json();
-      if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
-      alert('Payment successful! Your order has been placed.');
-      setCart({});
-      setCartOpen(false);
-    } else {
-      alert(`Payment status: ${verifyData.status}. Please check your order.`);
+      if (!window.Cashfree) {
+        alert('Cashfree SDK not loaded');
+        setCheckingOut(false);
+        return;
+      }
+
+      const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
+      const cashfree = window.Cashfree({ mode });
+
+      await cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: '_modal',
+      });
+
+      const verifyOrderId = data.orderId;
+      const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: verifyOrderId }),
+      });
+
+      const verifyData = await verifyResponse.json();
+      if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+
+      if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
+        const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: profile.sub,
+            userEmail: profile.email,
+            cart: cartArray,
+            orderId: verifyOrderId,
+          }),
+        });
+
+        const recordData = await recordResponse.json();
+        if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
+
+        alert('Payment successful! Your order has been placed.');
+        setCart({});
+        setCartOpen(false);
+      } else {
+        alert(`Payment status: ${verifyData.status}. Please check your order.`);
+      }
+    } catch (err) {
+      alert(`Payment failed: ${err.message}`);
+    } finally {
+      setCheckingOut(false);
     }
-  } catch (err) {
-    alert(`Payment failed: ${err.message}`);
-  } finally {
-    setCheckingOut(false);
-  }
-};
+  };
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+      {/* Show banner if ordering disabled */}
+      {!acceptingOrders && (
+        <div style={{
+          background: '#fee2e2',
+          color: '#b91c1c',
+          padding: 12,
+          borderRadius: 8,
+          textAlign: 'center',
+          fontWeight: 600,
+          marginBottom: 16
+        }}>
+          ⚠️ Online orders are currently disabled.
+        </div>
+      )}
+
       <Header
         profile={profile}
         search={search}
@@ -221,6 +243,7 @@ export default function Home() {
             onAddToCart={(item) => updateCartQuantity(item, 1)}
             cart={cart}
             onRemoveFromCart={(item) => updateCartQuantity(item, -1)}
+            acceptingOrders={acceptingOrders} // pass state
           />
         </>
       )}
@@ -241,92 +264,7 @@ export default function Home() {
   );
 }
 
-function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
-  const firstName = profile?.name ? profile.name.split(' ')[0] : '';
-
-  return (
-    <div>
-      {firstName && (
-        <div style={greetingContainerStyle}>
-          <h1 style={greetingHeadingStyle}>
-            👋 Hello, <span style={nameStyle}>{firstName}</span>
-          </h1>
-          <p style={subheadingStyle}>What are you craving today?</p>
-          <p style={demostyle}>This is just a demo menu. Real menu will be updated when it goes live.</p>
-        </div>
-      )}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
-        {!firstName && <h2 style={headerTitleStyle}>GrabNGo</h2>}
-
-        <input
-          placeholder="Search for food..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          style={{
-            ...searchInputStyle,
-            marginLeft: firstName ? 0 : 'auto',
-            width: firstName ? '100%' : 360
-          }}
-        />
-        <button onClick={onViewCart} style={cartCount==0 ? viewCartButtonStyle : filledCartButtonStyle}>
-          🛒 Cart ({cartCount})
-        </button>
-      </div>
-    </div>
-  );
-}
-
-
-function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart }) {
-  if (items.length === 0) {
-    return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
-  }
-
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20, marginTop: 20 }}>
-      {items.map((item) => {
-        const cartItem = cart[item.id];
-        const quantityInCart = cartItem?.qty || 0;
-        const isAvailable = item.is_available;
-
-        return (
-          <div key={item.id} style={{ ...menuItemStyle, opacity: isAvailable ? 1 : 0.6 }}>
-            <div style={{ height: 180, background: '#f1f5f9' }}>
-              {item.image_url && (
-                <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              )}
-            </div>
-            <div style={{ padding: 14, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div>
-              <div style={{ color: '#64748b', fontSize: 14, height: 40, overflow: 'hidden', marginTop: 4 }}>
-                {item.description || 'A delicious and freshly prepared item.'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div>
-                <div style={{ marginLeft: 'auto' }}>
-                  {isAvailable ? (
-                    quantityInCart > 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
-                        <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{quantityInCart}</span>
-                        <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button>
-                    )
-                  ) : (
-                    <div style={outOfStockButtonStyle}>Out of Stock</div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
+// CATEGORY BAR & PILL COMPONENTS
 function CategoryBar({ categories, activeCategory, onCategoryChange }) {
   return (
     <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
@@ -358,6 +296,93 @@ function CategoryPill({ label, active, onClick }) {
   );
 }
 
+function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders }) {
+  if (items.length === 0) {
+    return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
+  }
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20, marginTop: 20 }}>
+      {items.map((item) => {
+        const cartItem = cart[item.id];
+        const quantityInCart = cartItem?.qty || 0;
+        const isAvailable = item.is_available;
+
+        return (
+          <div key={item.id} style={{ ...menuItemStyle, opacity: isAvailable ? 1 : 0.6 }}>
+            <div style={{ height: 180, background: '#f1f5f9' }}>
+              {item.image_url && (
+                <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+            </div>
+            <div style={{ padding: 14, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div>
+              <div style={{ color: '#64748b', fontSize: 14, height: 40, overflow: 'hidden', marginTop: 4 }}>
+                {item.description || 'A delicious and freshly prepared item.'}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 12 }}>
+                <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div>
+                <div style={{ marginLeft: 'auto' }}>
+                  {isAvailable && acceptingOrders ? (
+                    quantityInCart > 0 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
+                        <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{quantityInCart}</span>
+                        <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button>
+                    )
+                  ) : (
+                    <div style={outOfStockButtonStyle}>
+                      {acceptingOrders ? 'Out of Stock' : 'Ordering Paused'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// HEADER COMPONENT
+function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
+  const firstName = profile?.name ? profile.name.split(' ')[0] : '';
+  return (
+    <div>
+      {firstName && (
+        <div style={greetingContainerStyle}>
+          <h1 style={greetingHeadingStyle}>
+            👋 Hello, <span style={nameStyle}>{firstName}</span>
+          </h1>
+          <p style={subheadingStyle}>What are you craving today?</p>
+          <p style={demostyle}>This is just a demo menu. Real menu will be updated when it goes live.</p>
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
+        {!firstName && <h2 style={headerTitleStyle}>GrabNGo</h2>}
+        <input
+          placeholder="Search for food..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          style={{
+            ...searchInputStyle,
+            marginLeft: firstName ? 0 : 'auto',
+            width: firstName ? '100%' : 360
+          }}
+        />
+        <button onClick={onViewCart} style={cartCount === 0 ? viewCartButtonStyle : filledCartButtonStyle}>
+          🛒 Cart ({cartCount})
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// Styles
 const greetingContainerStyle = { marginBottom: 24 };
 const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b' };
 const nameStyle = { fontWeight: 700, color: '#f97316' };
@@ -394,4 +419,6 @@ const outOfStockButtonStyle = {
   fontWeight: 600,
 };
 const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
-const demostyle={color:'red', fontWeight:'bold'};
+const demostyle = { color: 'red', fontWeight: 'bold' };
+const headerTitleStyle = { fontWeight: 700, color: '#f97316', marginRight: 'auto' };
+
