@@ -52,7 +52,6 @@ export default function AdminOrders() {
     setLoading(false);
   }, []);
 
-  // Fetch settings (online order toggle)
   const fetchSettings = useCallback(async () => {
     const { data, error } = await supabase
       .from('settings')
@@ -67,7 +66,6 @@ export default function AdminOrders() {
     }
   }, []);
 
-  // Fetch data every 10s
   useEffect(() => {
     fetchOrders();
     fetchSettings();
@@ -78,7 +76,6 @@ export default function AdminOrders() {
     return () => clearInterval(interval);
   }, [fetchOrders, fetchSettings]);
 
-  // Fetch statistics
   useEffect(() => {
     const fetchStats = async () => {
       const { data: ordersToday, error: ordersTodayErr } = await supabase
@@ -112,7 +109,6 @@ export default function AdminOrders() {
     fetchStats();
   }, []);
 
-  // Update order status
   const handleStatusUpdate = async (orderId, newStatus) => {
     setOrders(currentOrders =>
       currentOrders.map(order =>
@@ -131,7 +127,6 @@ export default function AdminOrders() {
     }
   };
 
-  // Handle toggle (accepting orders)
   const handleToggle = async (e) => {
     const newValue = e.target.checked;
     setAcceptingOrders(newValue);
@@ -145,7 +140,6 @@ export default function AdminOrders() {
       alert('Error updating toggle: ' + error.message);
     } else {
       if (!newValue) {
-        // Optional: mark all food items out of stock
         await supabase.from('food_items').update({ is_available: false });
       }
     }
