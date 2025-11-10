@@ -28,7 +28,6 @@ export default function Home() {
     }
   });
 
-  // Online orders toggle: fetch from Supabase
   const [acceptingOrders, setAcceptingOrders] = useState(true);
 
   useEffect(() => {
@@ -79,7 +78,6 @@ export default function Home() {
     }
     loadData();
 
-    // (optional) Refresh toggle every 30s
     const interval = setInterval(loadData, 30000);
     return () => { isMounted = false; clearInterval(interval); };
   }, []);

@@ -71,7 +71,6 @@
   .team-grid{ grid-template-columns: 1fr; }
   .photo{ height: 300px; }
 }
-/* NEW: branch/year pill (peach) */
 .badge-row{
   margin-top: 6px;
 }
