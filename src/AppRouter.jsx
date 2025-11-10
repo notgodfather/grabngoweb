@@ -44,7 +44,7 @@ function TopNav() {
     return null;
   }
   
-  const isAdmin = profile?.email === ADMIN_EMAIL;
+  const isAdmin = !!profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase());
 
   const handleLogout = () => {
     googleLogout();

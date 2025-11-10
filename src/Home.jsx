@@ -202,7 +202,6 @@ export default function Home() {
 
   return (
     <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      {/* Show banner if ordering disabled */}
       {!acceptingOrders && (
         <div style={{
           background: '#fee2e2',
@@ -241,7 +240,7 @@ export default function Home() {
             onAddToCart={(item) => updateCartQuantity(item, 1)}
             cart={cart}
             onRemoveFromCart={(item) => updateCartQuantity(item, -1)}
-            acceptingOrders={acceptingOrders} // pass state
+            acceptingOrders={acceptingOrders}
           />
         </>
       )}
@@ -262,7 +261,6 @@ export default function Home() {
   );
 }
 
-// CATEGORY BAR & PILL COMPONENTS
 function CategoryBar({ categories, activeCategory, onCategoryChange }) {
   return (
     <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
@@ -346,7 +344,6 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
   );
 }
 
-// HEADER COMPONENT
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
   return (
@@ -380,7 +377,6 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   );
 }
 
-// Styles
 const greetingContainerStyle = { marginBottom: 24 };
 const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b' };
 const nameStyle = { fontWeight: 700, color: '#f97316' };
