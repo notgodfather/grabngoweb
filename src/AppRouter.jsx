@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
 import { googleLogout } from '@react-oauth/google';
-import { ADMIN_EMAIL } from './config';
+import { ADMIN_EMAILS } from './config';
 import LoginPage from './App.jsx';
 import Home from './Home.jsx';
 import OrderHistory from './OrderHistory.jsx';
