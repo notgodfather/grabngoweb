@@ -78,7 +78,7 @@ export default function Home() {
     }
     loadData();
 
-    const interval = setInterval(loadData, 30000);
+    const interval = setInterval(loadData, 300000);
     return () => { isMounted = false; clearInterval(interval); };
   }, []);
 
