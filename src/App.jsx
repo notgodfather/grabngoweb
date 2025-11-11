@@ -43,7 +43,7 @@ export default function App() {
 
         const userData = userInfo.data;
         const email = (userData.email || '').toLowerCase();
-        const allowed = email.endsWith('@gmail.com' || '@bmsce.ac.in') ;
+        const allowed = email.endsWith('@gmail.com') || email.endsWith('@bmsce.ac.in');
         if (allowed) {
           setProfile(userData);
           setError('');
