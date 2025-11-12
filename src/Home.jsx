@@ -16,7 +16,6 @@ export default function Home() {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
 
-  // bottom tabs: 'menu' | 'categories' | 'orders'
   const [activeTab, setActiveTab] = useState('menu');
 
   const [cart, setCart] = useState(() => {
@@ -193,7 +192,6 @@ export default function Home() {
     }
   };
 
-  // navigate Orders tab to your existing page
   const goToOrders = () => {
     window.location.href = '/orders';
   };
@@ -214,7 +212,6 @@ export default function Home() {
         </div>
       )}
 
-      {/* Sticky Header */}
       <div style={{
         position: 'sticky',
         top: 0,
@@ -232,7 +229,6 @@ export default function Home() {
           cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
           onViewCart={() => setCartOpen(true)}
         />
-        {/* Tab Switcher header row style */}
         <div style={{ display: 'flex', gap: 8, padding: '8px 0' }}>
           <TabButton active={activeTab === 'menu'} onClick={() => setActiveTab('menu')} label="Menu" />
           <TabButton active={activeTab === 'categories'} onClick={() => setActiveTab('categories')} label="Categories" />
@@ -246,20 +242,13 @@ export default function Home() {
       {!loading && (
         <>
           {activeTab === 'menu' && (
-            <>
-              <CategoryBar
-                categories={categories}
-                activeCategory={activeCat}
-                onCategoryChange={setActiveCat}
-              />
-              <MenuGrid
-                items={filteredItems}
-                onAddToCart={(item) => updateCartQuantity(item, 1)}
-                cart={cart}
-                onRemoveFromCart={(item) => updateCartQuantity(item, -1)}
-                acceptingOrders={acceptingOrders}
-              />
-            </>
+            <MenuGrid
+              items={filteredItems}
+              onAddToCart={(item) => updateCartQuantity(item, 1)}
+              cart={cart}
+              onRemoveFromCart={(item) => updateCartQuantity(item, -1)}
+              acceptingOrders={acceptingOrders}
+            />
           )}
 
           {activeTab === 'categories' && (
@@ -284,7 +273,6 @@ export default function Home() {
         />
       )}
 
-      {/* Floating "View cart" pill */}
       {cartArray.length > 0 && (
         <button
           onClick={() => setCartOpen(true)}
@@ -300,7 +288,6 @@ export default function Home() {
         </button>
       )}
 
-      {/* Bottom navigation (icons + labels) */}
       <div style={bottomNavStyle} role="navigation" aria-label="Primary">
         <button
           style={activeTab === 'menu' ? navBtnActiveStyle : navBtnStyle}
@@ -328,7 +315,6 @@ export default function Home() {
   );
 }
 
-/* Tabs in header */
 function TabButton({ active, onClick, label }) {
   return (
     <button
@@ -377,37 +363,6 @@ function CategoriesPage({ categories, onPickCategory }) {
         </button>
       ))}
     </div>
-  );
-}
-
-function CategoryBar({ categories, activeCategory, onCategoryChange }) {
-  return (
-    <div style={{ display: 'flex', gap: 10, marginTop: 12, marginBottom: 12, overflowX: 'auto', paddingBottom: 10 }}>
-      <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} />
-      {categories.map((c) => (
-        <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} />
-      ))}
-    </div>
-  );
-}
-
-function CategoryPill({ label, active, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        padding: '8px 14px',
-        borderRadius: 999,
-        border: '1px solid #e2e8f0',
-        background: active ? '#f97316' : '#fff',
-        color: active ? '#fff' : '#0f172a',
-        cursor: 'pointer',
-        fontWeight: active ? 600 : 500,
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {label}
-    </button>
   );
 }
 
@@ -497,7 +452,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   );
 }
 
-/* Styles */
+/* Styles kept from previous step */
 const greetingContainerStyle = { marginBottom: 16 };
 const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '1.8rem', fontWeight: 700, color: '#1e293b' };
 const nameStyle = { fontWeight: 800, color: '#f97316' };
@@ -537,7 +492,6 @@ const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 12, border: 
 const demostyle = { color: 'red', fontWeight: 'bold' };
 const headerTitleStyle = { fontWeight: 800, color: '#f97316', marginRight: 'auto' };
 
-/* Floating cart pill */
 const floatingCartStyle = {
   position: 'fixed',
   left: 16,
@@ -563,7 +517,6 @@ const cartBadgeStyle = {
   fontWeight: 800,
 };
 
-/* Bottom nav */
 const bottomNavStyle = {
   position: 'fixed',
   left: 0,
