@@ -371,41 +371,48 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
     return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
   }
 
+  const gridStyleCompact = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', // smaller cards
+    gap: 12,
+    marginTop: 8
+  };
+
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginTop: 8 }}>
+    <div style={gridStyleCompact}>
       {items.map((item) => {
         const cartItem = cart[item.id];
         const quantityInCart = cartItem?.qty || 0;
         const isAvailable = item.is_available;
 
         return (
-          <div key={item.id} style={{ ...menuItemStyle, opacity: isAvailable ? 1 : 0.6 }}>
-            <div style={{ height: 200, background: '#f1f5f9' }}>
+          <div key={item.id} style={{ ...menuItemStyleCompact, opacity: isAvailable ? 1 : 0.6 }}>
+            <div style={{ height: 110, background: '#f1f5f9' }}>
               {item.image_url && (
                 <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               )}
             </div>
-            <div style={{ padding: 14, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{item.name}</div>
-              <div style={{ color: '#64748b', fontSize: 14, minHeight: 36, overflow: 'hidden', marginTop: 4 }}>
-                {item.description || 'A delicious and freshly prepared item.'}
+            <div style={{ padding: 10, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.2 }}>{item.name}</div>
+              <div style={{ color: '#64748b', fontSize: 12, minHeight: 28, overflow: 'hidden', marginTop: 4 }}>
+                {item.description || 'Freshly prepared item.'}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 12 }}>
-                <div style={{ fontWeight: 800, fontSize: '1.15rem' }}>{formatPrice(item.price)}</div>
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 8 }}>
+                <div style={{ fontWeight: 800, fontSize: '1rem' }}>{formatPrice(item.price)}</div>
                 <div style={{ marginLeft: 'auto' }}>
                   {isAvailable && acceptingOrders ? (
                     quantityInCart > 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
-                        <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 700 }}>{quantityInCart}</span>
-                        <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyleCompact}>−</button>
+                        <span style={{ minWidth: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{quantityInCart}</span>
+                        <button onClick={() => onAddToCart(item)} style={quantityButtonStyleCompact}>+</button>
                       </div>
                     ) : (
-                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add</button>
+                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyleCompact}>Add</button>
                     )
                   ) : (
-                    <div style={outOfStockButtonStyle}>
-                      {acceptingOrders ? 'Out of Stock' : 'Ordering Paused'}
+                    <div style={outOfStockButtonStyleCompact}>
+                      {acceptingOrders ? 'Out' : 'Paused'}
                     </div>
                   )}
                 </div>
@@ -417,6 +424,7 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
     </div>
   );
 }
+
 
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
@@ -551,4 +559,45 @@ const navBtnActiveStyle = {
 const navLabelStyle = {
   fontSize: 12,
   marginTop: 2
+};
+
+const menuItemStyleCompact = {
+  border: '1px solid #eef2f7',
+  borderRadius: 12,
+  overflow: 'hidden',
+  background: '#fff',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const addToCartButtonStyleCompact = {
+  padding: '8px 12px',
+  borderRadius: 10,
+  border: '1px solid #16a34a',
+  background: '#ecfdf5',
+  color: '#166534',
+  cursor: 'pointer',
+  fontWeight: 700,
+  fontSize: 12,
+};
+
+const quantityButtonStyleCompact = {
+  width: 28,
+  height: 28,
+  borderRadius: 8,
+  border: '1px solid #e2e8f0',
+  background: '#fff',
+  cursor: 'pointer',
+  fontSize: '1rem',
+};
+
+const outOfStockButtonStyleCompact = {
+  padding: '8px 12px',
+  borderRadius: 10,
+  background: '#e2e8f0',
+  color: '#64748b',
+  textAlign: 'center',
+  fontWeight: 700,
+  fontSize: 12,
 };
