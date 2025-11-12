@@ -380,7 +380,7 @@ const searchInputStyle = {
 };
 
 const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600 };
-const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid '#f97316'', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
+const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
 const quantityButtonStyle = { width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
 
 const menuItemStyle = {
