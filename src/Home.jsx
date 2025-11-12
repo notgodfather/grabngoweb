@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
-import TrendingFeed from './TrendingFeed';
 
 export default function Home() {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
