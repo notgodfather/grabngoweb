@@ -8,7 +8,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
-
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -16,9 +15,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
 
-  // local tab for Menu | Categories; 'orders' is handled by router
   const [activeTab, setActiveTab] = useState('menu');
-
   const [cart, setCart] = useState(() => {
     try {
       const savedCart = localStorage.getItem('cart');
@@ -81,7 +78,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       } else {
         setAcceptingOrders(settingsRes.data?.receive_orders ?? true);
       }
-
       setCategories(catRes.data || []);
       setItems(itemRes.data || []);
       setLoading(false);
@@ -138,19 +134,13 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
       };
 
+      // send entire cart (with item objects) for proper backend insert
       const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           amount: totalAmount,
-          currency: 'INR',
-          cart: cartArray.map(ci => ({
-            price: Number(ci.item.price),
-            quantity: ci.qty,
-            id: ci.item.id,
-            name: ci.item.name,
-            image: ci.item.image_url,
-          })),
+          cart: cartArray,
           user: userDetails,
         }),
       });
@@ -183,23 +173,10 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
 
       if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-        const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: profile.sub,
-            userEmail: profile.email,
-            cart: cartArray,
-            orderId: verifyOrderId,
-          }),
-        });
-
-        const recordData = await recordResponse.json();
-        if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
-
+        // NO call to record-order! backend already saves items
         alert('Payment successful! Your order has been placed.');
         setCart({});
-        closeCart(); // ensure nav returns
+        closeCart();
       } else {
         alert(`Payment status: ${verifyData.status}. Please check your order.`);
       }
@@ -288,9 +265,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
       {cartArray.length > 0 && !isCartOpen && (
         <>
-          {/* Spacer so content and global bottom nav aren’t covered */}
           <div style={{ height: 84 }} />
-          {/* Floating "View cart" pill */}
           <button
             onClick={openCart}
             style={floatingCartStyle}
