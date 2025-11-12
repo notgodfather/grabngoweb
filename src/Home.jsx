@@ -274,19 +274,25 @@ export default function Home() {
       )}
 
       {cartArray.length > 0 && !isCartOpen && (
-        <button
-          onClick={() => setCartOpen(true)}
-          style={floatingCartStyle}
-          aria-label="View cart"
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-            <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
-            <div style={{ fontWeight: 700 }}>View cart</div>
-            <div style={{ marginLeft: 'auto', fontWeight: 700 }}>{formatPrice(cartTotal)}</div>
-            <span aria-hidden style={{ fontSize: 18 }}>›</span>
-          </div>
-        </button>
-      )}
+  <>
+    {/* Spacer so content and bottom nav aren’t covered */}
+    <div style={{ height: 84 }} />
+
+    {/* Floating "View cart" pill */}
+    <button
+      onClick={() => setCartOpen(true)}
+      style={floatingCartStyle}
+      aria-label="View cart"
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+        <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
+        <div style={{ fontWeight: 700 }}>View cart</div>
+        <div style={{ marginLeft: 'auto', fontWeight: 700 }}>{formatPrice(cartTotal)}</div>
+        <span aria-hidden style={{ fontSize: 18 }}>›</span>
+      </div>
+    </button>
+  </>
+)}
 
       <div style={bottomNavStyle} role="navigation" aria-label="Primary">
         <button
@@ -500,7 +506,8 @@ const floatingCartStyle = {
   position: 'fixed',
   left: 16,
   right: 16,
-  bottom: 'max(16px, env(safe-area-inset-bottom))',
+  // Place pill above the bottom nav (assume nav height ≈ 56px)
+  bottom: 'calc(56px + max(16px, env(safe-area-inset-bottom)))',
   zIndex: 1300,
   background: '#22c55e',
   color: '#fff',
@@ -509,6 +516,7 @@ const floatingCartStyle = {
   padding: '14px 18px',
   boxShadow: '0 12px 24px rgba(34,197,94,0.35)',
 };
+
 
 const cartBadgeStyle = {
   width: 36,
