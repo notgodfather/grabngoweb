@@ -2,14 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
-import TrendingFeed from './TrendingFeed';
 
 export default function Home() {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
 
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
-  const [trendingItems, setTrendingItems] = useState([]);
 
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
@@ -40,10 +38,9 @@ export default function Home() {
       setLoading(true);
       setError('');
 
-      const [catRes, itemRes, trendRes, settingsRes] = await Promise.all([
+      const [catRes, itemRes, settingsRes] = await Promise.all([
         supabase.from('categories').select('*').eq('is_available', true).order('display_order', { ascending: true }),
         supabase.from('food_items').select('*').order('name', { ascending: true }),
-        supabase.rpc('get_trending_items'),
         supabase.from('settings').select('receive_orders').limit(1).single(),
       ]);
 
@@ -67,13 +64,6 @@ export default function Home() {
 
       setCategories(catRes.data || []);
       setItems(itemRes.data || []);
-
-      if (trendRes.error) {
-        console.error("Could not fetch trending items:", trendRes.error.message);
-      } else {
-        setTrendingItems(trendRes.data || []);
-      }
-
       setLoading(false);
     }
     loadData();
@@ -229,7 +219,6 @@ export default function Home() {
 
       {!loading && (
         <>
-          <TrendingFeed items={trendingItems} />
           <CategoryBar
             categories={categories}
             activeCategory={activeCat}
@@ -391,7 +380,7 @@ const searchInputStyle = {
 };
 
 const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600 };
-const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
+const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid '#f97316'', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
 const quantityButtonStyle = { width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
 
 const menuItemStyle = {
@@ -416,4 +405,3 @@ const outOfStockButtonStyle = {
 const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
 const demostyle = { color: 'red', fontWeight: 'bold' };
 const headerTitleStyle = { fontWeight: 700, color: '#f97316', marginRight: 'auto' };
-
