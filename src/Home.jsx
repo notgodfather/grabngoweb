@@ -597,90 +597,6 @@ const outOfStockButtonStyleCompact = {
   fontWeight: 700,
   fontSize: 12,
 };
-const menuTileStyle = {
-  border: '1px solid #eef2f7',
-  borderRadius: 14,
-  padding: 12,
-  background: '#fff',
-  boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
-  display: 'flex',
-  flexDirection: 'column',
-};
-
-const tileImageWrapStyle = {
-  width: '100%',
-  height: 110,
-  borderRadius: 12,
-  background: '#f8fafc',
-  overflow: 'hidden'
-};
-
-const tileImageStyle = {
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover'
-};
-
-const tileNameStyle = {
-  fontWeight: 700,
-  fontSize: '0.95rem',
-  lineHeight: 1.2,
-  color: '#0f172a'
-};
-
-const tileSubStyle = {
-  color: '#64748b',
-  fontSize: 12,
-  marginTop: 2,
-  minHeight: 24,
-  overflow: 'hidden'
-};
-
-const tilePriceStyle = {
-  fontWeight: 800,
-  fontSize: '0.95rem',
-  color: '#0f172a'
-};
-
-const addTileBtnStyle = {
-  padding: '6px 10px',
-  borderRadius: 999,
-  border: '1px solid #16a34a',
-  background: '#ecfdf5',
-  color: '#166534',
-  cursor: 'pointer',
-  fontWeight: 800,
-  fontSize: 12,
-  lineHeight: 1
-};
-
-const qtyBtnTileStyle = {
-  width: 28,
-  height: 28,
-  borderRadius: 999,
-  border: '1px solid #e2e8f0',
-  background: '#fff',
-  cursor: 'pointer',
-  fontSize: '1rem',
-  lineHeight: 1
-};
-
-const qtyCountStyle = {
-  minWidth: 18,
-  textAlign: 'center',
-  fontWeight: 800,
-  fontSize: 12
-};
-
-const tileOutStyle = {
-  padding: '6px 10px',
-  borderRadius: 999,
-  background: '#e2e8f0',
-  color: '#64748b',
-  fontWeight: 700,
-  fontSize: 12
-};
-
 // 2-up compact grid like Categories
 const menuTilesGridStyle = {
   display: 'grid',
@@ -727,7 +643,7 @@ const tileSubStyle = {
   color: '#64748b',
   fontSize: 12,
   marginTop: 2,
-  minHeight: 20,
+  minHeight: 20, // pick 20 or 24 and keep only one definition
   overflow: 'hidden'
 };
 
