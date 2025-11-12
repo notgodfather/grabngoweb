@@ -355,6 +355,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
           </h1>
           <p style={subheadingStyle}>What are you craving today?</p>
           <p style={demostyle}>This MENU is for VIDYARTHI KHANA.</p>
+          <p style={demostyle}>Keep checking your order status in My Orders Section and go pick your order when it's ready for pickup.</p>
         </div>
       )}
       <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
