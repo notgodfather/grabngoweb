@@ -191,7 +191,7 @@ export default function Home() {
   };
 
   return (
-    <div style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
       {!acceptingOrders && (
         <div style={{
           background: '#fee2e2',
@@ -211,7 +211,10 @@ export default function Home() {
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        background: '#fff',
+        background: 'rgba(255,255,255,0.9)',
+        backdropFilter: 'saturate(180%) blur(8px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(8px)',
+        borderBottom: '1px solid rgba(226,232,240,0.6)',
         paddingTop: 'max(0px, env(safe-area-inset-top))'
       }}>
         <Header
@@ -255,6 +258,30 @@ export default function Home() {
           isCheckingOut={isCheckingOut}
         />
       )}
+
+      {/* Floating "View cart" pill */}
+      {cartArray.length > 0 && (
+        <button
+          onClick={() => setCartOpen(true)}
+          style={floatingCartStyle}
+          aria-label="View cart"
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+            <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
+            <div style={{ fontWeight: 700 }}>View cart</div>
+            <div style={{ marginLeft: 'auto', fontWeight: 700 }}>{formatPrice(cartTotal)}</div>
+            <span aria-hidden style={{ fontSize: 18 }}>›</span>
+          </div>
+        </button>
+      )}
+
+      {/* Bottom navigation */}
+      <div style={bottomNavStyle} role="navigation" aria-label="Primary">
+        <button style={navBtnStyle}>🏠 Home</button>
+        <button style={navBtnStyle}>🧾 Orders</button>
+        <button style={navBtnStyle}>🗂️ Categories</button>
+        <button style={navBtnStyle}>👤 Profile</button>
+      </div>
     </div>
   );
 }
@@ -304,14 +331,14 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
 
         return (
           <div key={item.id} style={{ ...menuItemStyle, opacity: isAvailable ? 1 : 0.6 }}>
-            <div style={{ height: 180, background: '#f1f5f9' }}>
+            <div style={{ height: 200, background: '#f1f5f9' }}>
               {item.image_url && (
                 <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               )}
             </div>
             <div style={{ padding: 14, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
               <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div>
-              <div style={{ color: '#64748b', fontSize: 14, height: 40, overflow: 'hidden', marginTop: 4 }}>
+              <div style={{ color: '#64748b', fontSize: 14, minHeight: 40, overflow: 'hidden', marginTop: 4 }}>
                 {item.description || 'A delicious and freshly prepared item.'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 12 }}>
@@ -394,13 +421,13 @@ const quantityButtonStyle = { width: 36, height: 36, borderRadius: 10, border: '
 
 const menuItemStyle = {
   border: '1px solid #eef2f7',
-  borderRadius: 14,
+  borderRadius: 16,
   overflow: 'hidden',
   background: '#fff',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+  boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
   display: 'flex',
   flexDirection: 'column',
-  transition: 'opacity 0.2s ease-in-out',
+  transition: 'transform .12s ease, box-shadow .12s ease',
 };
 
 const outOfStockButtonStyle = {
@@ -414,3 +441,50 @@ const outOfStockButtonStyle = {
 const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
 const demostyle = { color: 'red', fontWeight: 'bold' };
 const headerTitleStyle = { fontWeight: 700, color: '#f97316', marginRight: 'auto' };
+
+/* New styles */
+const floatingCartStyle = {
+  position: 'fixed',
+  left: 16,
+  right: 16,
+  bottom: 'max(16px, env(safe-area-inset-bottom))',
+  zIndex: 1300,
+  background: '#22c55e',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 28,
+  padding: '14px 18px',
+  boxShadow: '0 12px 24px rgba(34,197,94,0.35)',
+};
+
+const cartBadgeStyle = {
+  width: 36,
+  height: 36,
+  borderRadius: 999,
+  background: 'rgba(255,255,255,0.2)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 700,
+};
+
+const bottomNavStyle = {
+  position: 'fixed',
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 1200,
+  background: '#fff',
+  borderTop: '1px solid #e2e8f0',
+  padding: '8px 12px',
+  paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
+  display: 'flex',
+  justifyContent: 'space-around',
+};
+
+const navBtnStyle = {
+  background: 'transparent',
+  border: 'none',
+  fontSize: 12,
+  color: '#0f172a',
+};
