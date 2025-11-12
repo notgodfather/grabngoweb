@@ -371,49 +371,51 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
     return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
   }
 
-  const gridStyleCompact = {
+  const gridTileStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', // smaller cards
+    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
     gap: 12,
     marginTop: 8
   };
 
   return (
-    <div style={gridStyleCompact}>
+    <div style={gridTileStyle}>
       {items.map((item) => {
         const cartItem = cart[item.id];
-        const quantityInCart = cartItem?.qty || 0;
+        const qty = cartItem?.qty || 0;
         const isAvailable = item.is_available;
 
         return (
-          <div key={item.id} style={{ ...menuItemStyleCompact, opacity: isAvailable ? 1 : 0.6 }}>
-            <div style={{ height: 110, background: '#f1f5f9' }}>
+          <div key={item.id} style={{ ...menuTileStyle, opacity: isAvailable ? 1 : 0.6 }}>
+            <div style={tileImageWrapStyle}>
               {item.image_url && (
-                <img src={item.image_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img
+                  src={item.image_url}
+                  alt={item.name}
+                  style={tileImageStyle}
+                />
               )}
             </div>
-            <div style={{ padding: 10, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: '0.95rem', lineHeight: 1.2 }}>{item.name}</div>
-              <div style={{ color: '#64748b', fontSize: 12, minHeight: 28, overflow: 'hidden', marginTop: 4 }}>
-                {item.description || 'Freshly prepared item.'}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 8 }}>
-                <div style={{ fontWeight: 800, fontSize: '1rem' }}>{formatPrice(item.price)}</div>
+
+            <div style={{ paddingTop: 8, display: 'flex', flexDirection: 'column' }}>
+              <div style={tileNameStyle}>{item.name}</div>
+              <div style={tileSubStyle}>{item.description || 'Tap to view'}</div>
+
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
+                <div style={tilePriceStyle}>{formatPrice(item.price)}</div>
                 <div style={{ marginLeft: 'auto' }}>
                   {isAvailable && acceptingOrders ? (
-                    quantityInCart > 0 ? (
+                    qty > 0 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyleCompact}>−</button>
-                        <span style={{ minWidth: 20, textAlign: 'center', fontWeight: 700, fontSize: 12 }}>{quantityInCart}</span>
-                        <button onClick={() => onAddToCart(item)} style={quantityButtonStyleCompact}>+</button>
+                        <button onClick={() => onRemoveFromCart(item)} style={qtyBtnTileStyle}>−</button>
+                        <span style={qtyCountStyle}>{qty}</span>
+                        <button onClick={() => onAddToCart(item)} style={qtyBtnTileStyle}>+</button>
                       </div>
                     ) : (
-                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyleCompact}>Add</button>
+                      <button onClick={() => onAddToCart(item)} style={addTileBtnStyle}>ADD</button>
                     )
                   ) : (
-                    <div style={outOfStockButtonStyleCompact}>
-                      {acceptingOrders ? 'Out' : 'Paused'}
-                    </div>
+                    <div style={tileOutStyle}>{acceptingOrders ? 'Out' : 'Paused'}</div>
                   )}
                 </div>
               </div>
@@ -424,6 +426,7 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
     </div>
   );
 }
+
 
 
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
@@ -601,3 +604,87 @@ const outOfStockButtonStyleCompact = {
   fontWeight: 700,
   fontSize: 12,
 };
+const menuTileStyle = {
+  border: '1px solid #eef2f7',
+  borderRadius: 14,
+  padding: 12,
+  background: '#fff',
+  boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
+  display: 'flex',
+  flexDirection: 'column',
+};
+
+const tileImageWrapStyle = {
+  width: '100%',
+  height: 110,
+  borderRadius: 12,
+  background: '#f8fafc',
+  overflow: 'hidden'
+};
+
+const tileImageStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover'
+};
+
+const tileNameStyle = {
+  fontWeight: 700,
+  fontSize: '0.95rem',
+  lineHeight: 1.2,
+  color: '#0f172a'
+};
+
+const tileSubStyle = {
+  color: '#64748b',
+  fontSize: 12,
+  marginTop: 2,
+  minHeight: 24,
+  overflow: 'hidden'
+};
+
+const tilePriceStyle = {
+  fontWeight: 800,
+  fontSize: '0.95rem',
+  color: '#0f172a'
+};
+
+const addTileBtnStyle = {
+  padding: '6px 10px',
+  borderRadius: 999,
+  border: '1px solid #16a34a',
+  background: '#ecfdf5',
+  color: '#166534',
+  cursor: 'pointer',
+  fontWeight: 800,
+  fontSize: 12,
+  lineHeight: 1
+};
+
+const qtyBtnTileStyle = {
+  width: 28,
+  height: 28,
+  borderRadius: 999,
+  border: '1px solid #e2e8f0',
+  background: '#fff',
+  cursor: 'pointer',
+  fontSize: '1rem',
+  lineHeight: 1
+};
+
+const qtyCountStyle = {
+  minWidth: 18,
+  textAlign: 'center',
+  fontWeight: 800,
+  fontSize: 12
+};
+
+const tileOutStyle = {
+  padding: '6px 10px',
+  borderRadius: 999,
+  background: '#e2e8f0',
+  color: '#64748b',
+  fontWeight: 700,
+  fontSize: 12
+};
+
