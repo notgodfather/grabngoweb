@@ -427,38 +427,43 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
 
 
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
-  const firstName = profile?.name ? profile.name.split(' ')[0] : '';
+  const firstName = profile?.name ? profile.name.split(' ')[0] : 'Guest';
+
   return (
-    <div>
-      {firstName && (
-        <div style={greetingContainerStyle}>
-          <h1 style={greetingHeadingStyle}>
-            👋 Hello, <span style={nameStyle}>{firstName}</span>
-          </h1>
-          <p style={subheadingStyle}>What are you craving today?</p>
-          <p style={demostyle}>This MENU is for VIDYARTHI KHANA.</p>
-          <p style={demostyle}>Keep checking your order status in My Orders Section and go pick your order when it's ready for pickup.</p>
+    <div style={hdrWrapStyle}>
+      {/* Top row: brand + compact notice */}
+      <div style={hdrTopRowStyle}>
+        <div style={hdrHelloStyle}>
+          <span style={{ marginRight: 8 }}>👋</span>
+          <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
         </div>
-      )}
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16 }}>
-        {!firstName && <h2 style={headerTitleStyle}>GrabNGo</h2>}
+
+        {/* Inline status chip (shows only when orders disabled) */}
+        {/* If you prefer to always show a small hint, keep it; else hide when accepting orders */}
+        {/* Example shows generic message; you can conditionally render from acceptingOrders */}
+        <div style={noticeChipStyle}>Ordering paused</div>
+      </div>
+
+      {/* Subtitle */}
+      <div style={hdrSubStyle}>What are you craving today?</div>
+
+      {/* Actions row: search + cart */}
+      <div style={hdrActionsRowStyle}>
         <input
           placeholder="Search for food..."
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          style={{
-            ...searchInputStyle,
-            marginLeft: firstName ? 0 : 'auto',
-            width: firstName ? '100%' : 360
-          }}
+          style={hdrSearchStyle}
         />
-        <button onClick={onViewCart} style={cartCount === 0 ? viewCartButtonStyle : filledCartButtonStyle}>
-          🛒 Cart ({cartCount})
+        <button onClick={onViewCart} style={cartChipStyle}>
+          🛒 <span style={{ marginLeft: 6 }}>Cart</span>
+          <span style={cartCountPillStyle}>{cartCount}</span>
         </button>
       </div>
     </div>
   );
 }
+
 
 /* Styles kept from previous step */
 const greetingContainerStyle = { marginBottom: 16 };
