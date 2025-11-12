@@ -703,3 +703,81 @@ const tileOutStyle = {
   fontWeight: 700,
   fontSize: 12
 };
+
+const hdrWrapStyle = {
+  padding: '10px 0 8px 0',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 6
+};
+
+const hdrTopRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8
+};
+
+const hdrHelloStyle = {
+  fontSize: '1.1rem',
+  fontWeight: 700,
+  color: '#1e293b',
+  display: 'flex',
+  alignItems: 'center'
+};
+
+const noticeChipStyle = {
+  marginLeft: 'auto',
+  fontSize: 12,
+  padding: '6px 10px',
+  borderRadius: 999,
+  background: '#fee2e2',
+  color: '#b91c1c',
+  border: '1px solid #fecaca',
+  whiteSpace: 'nowrap'
+};
+
+const hdrSubStyle = {
+  fontSize: '0.95rem',
+  color: '#64748b'
+};
+
+const hdrActionsRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 10
+};
+
+const hdrSearchStyle = {
+  padding: 10,
+  borderRadius: 12,
+  border: '1px solid #e2e8f0',
+  flex: 1
+};
+
+const cartChipStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  padding: '8px 12px',
+  borderRadius: 999,
+  border: '1px solid #e2e8f0',
+  background: '#fff',
+  fontWeight: 700,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap'
+};
+
+const cartCountPillStyle = {
+  marginLeft: 8,
+  minWidth: 22,
+  height: 22,
+  borderRadius: 999,
+  background: '#f97316',
+  color: '#fff',
+  fontSize: 12,
+  fontWeight: 800,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '0 6px'
+};
