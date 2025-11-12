@@ -9,21 +9,7 @@ export default function TrendingFeed({ items }) {
     return null;
   }
 
-  return (
-    <div style={containerStyle}>
-      <h3 style={headingStyle}><FireIcon /> Trending on Campus</h3>
-      <div style={gridStyle}>
-        {items.map(item => (
-          <div key={item.item_id} style={itemStyle}>
-            <img src={item.image_url} alt={item.name} style={imageStyle} />
-            <div style={nameStyle}>{item.name}</div>
-            <div style={countStyle}>{item.order_count} orders today</div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+
 
 
 const containerStyle = {
