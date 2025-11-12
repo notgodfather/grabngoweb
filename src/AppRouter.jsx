@@ -21,14 +21,8 @@ export default function AppRouter() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
         <Route path="/orders" element={<ProtectedRoute><OrderHistory /></ProtectedRoute>} />
-        <Route 
-          path="/admin/items" 
-          element={<AdminRoute><AdminItems /></AdminRoute>} 
-        />
-        <Route 
-          path="/admin/orders" 
-          element={<AdminRoute><AdminOrders /></AdminRoute>} 
-        />
+        <Route path="/admin/items" element={<AdminRoute><AdminItems /></AdminRoute>} />
+        <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
       </Routes>
     </>
   );
@@ -37,13 +31,12 @@ export default function AppRouter() {
 function TopNav() {
   const isAuthed = localStorage.getItem('isAuthed') === 'true';
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
-  
   const navigate = useNavigate();
 
   if (!isAuthed) {
     return null;
   }
-  
+
   const isAdmin = !!profile?.email && ADMIN_EMAILS.includes(profile.email.toLowerCase());
 
   const handleLogout = () => {
@@ -61,17 +54,13 @@ function TopNav() {
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
         <Link to="/home" style={linkStyle}>Menu</Link>
         <Link to="/orders" style={linkStyle}>My Orders</Link>
-
         {isAdmin && (
           <>
             <Link to="/admin/orders" style={adminLinkStyle}>Manage Orders</Link>
             <Link to="/admin/items" style={adminLinkStyle}>Manage Items</Link>
           </>
         )}
-
-        <button onClick={handleLogout} style={logoutButtonStyle}>
-          Logout
-        </button>
+        <button onClick={handleLogout} style={logoutButtonStyle}>Logout</button>
       </div>
     </nav>
   );
@@ -85,22 +74,19 @@ const navStyle = {
   background: '#fff',
 };
 
-
-const linkStyle = { 
-  textDecoration: 'none', 
-  color: '#334155', 
+const linkStyle = {
+  textDecoration: 'none',
+  color: '#334155',
   fontWeight: '400'
 };
 
-
-const adminLinkStyle = { 
-  ...linkStyle, 
-  background: '#f1f5f9', 
-  color: '#1e293b', 
-  padding: '8px 12px', 
-  borderRadius: 8 
+const adminLinkStyle = {
+  ...linkStyle,
+  background: '#f1f5f9',
+  color: '#1e293b',
+  padding: '8px 12px',
+  borderRadius: 8
 };
-
 
 const logoutButtonStyle = {
   background: '#fee2e2',

@@ -269,72 +269,49 @@ export default function Home() {
       )}
 
       {cartArray.length > 0 && !isCartOpen && (
-  <>
-    {/* Spacer so content and bottom nav aren’t covered */}
-    <div style={{ height: 84 }} />
-
-    {/* Floating "View cart" pill */}
-    <button
-      onClick={() => setCartOpen(true)}
-      style={floatingCartStyle}
-      aria-label="View cart"
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-        <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
-        <div style={{ fontWeight: 700 }}>View cart</div>
-        <div style={{ marginLeft: 'auto', fontWeight: 700 }}>{formatPrice(cartTotal)}</div>
-        <span aria-hidden style={{ fontSize: 18 }}>›</span>
-      </div>
-    </button>
-  </>
-)}
+        <>
+          <div style={{ height: 84 }} />
+          <button
+            onClick={() => setCartOpen(true)}
+            style={floatingCartStyle}
+            aria-label="View cart"
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+              <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
+              <div style={{ fontWeight: 700 }}>View cart</div>
+              <div style={{ marginLeft: 'auto', fontWeight: 700 }}>{formatPrice(cartTotal)}</div>
+              <span aria-hidden style={{ fontSize: 18 }}>›</span>
+            </div>
+          </button>
+        </>
+      )}
 
       {!isCartOpen && (
-  <div style={bottomNavStyle} role="navigation" aria-label="Primary">
-    <button
-      style={activeTab === 'menu' ? navBtnActiveStyle : navBtnStyle}
-      onClick={() => setActiveTab('menu')}
-    >
-      🍽️
-      <div style={navLabelStyle}>Menu</div>
-    </button>
-    <button
-      style={activeTab === 'categories' ? navBtnActiveStyle : navBtnStyle}
-      onClick={() => setActiveTab('categories')}
-    >
-      🗂️
-      <div style={navLabelStyle}>Categories</div>
-    </button>
-    <button
-      style={navBtnStyle}
-      onClick={() => { setActiveTab('orders'); goToOrders(); }}
-    >
-      🧾
-      <div style={navLabelStyle}>My Orders</div>
-    </button>
-  </div>
-)}
-
+        <div style={bottomNavStyle} role="navigation" aria-label="Primary">
+          <button
+            style={activeTab === 'menu' ? navBtnActiveStyle : navBtnStyle}
+            onClick={() => setActiveTab('menu')}
+          >
+            🍽️
+            <div style={navLabelStyle}>Menu</div>
+          </button>
+          <button
+            style={activeTab === 'categories' ? navBtnActiveStyle : navBtnStyle}
+            onClick={() => setActiveTab('categories')}
+          >
+            🗂️
+            <div style={navLabelStyle}>Categories</div>
+          </button>
+          <button
+            style={navBtnStyle}
+            onClick={() => { setActiveTab('orders'); goToOrders(); }}
+          >
+            🧾
+            <div style={navLabelStyle}>My Orders</div>
+          </button>
+        </div>
+      )}
     </div>
-  );
-}
-
-function TabButton({ active, onClick, label }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        border: '1px solid #e2e8f0',
-        background: active ? '#f97316' : '#fff',
-        color: active ? '#fff' : '#0f172a',
-        padding: '6px 12px',
-        borderRadius: 999,
-        fontWeight: active ? 700 : 500,
-        cursor: 'pointer'
-      }}
-    >
-      {label}
-    </button>
   );
 }
 
@@ -385,11 +362,11 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
           <button
             key={item.id}
             style={{ ...menuTileCardStyle, opacity: isAvailable ? 1 : 0.6 }}
-            onClick={() => { /* optional: open details later */ }}
+            onClick={() => {}}
           >
             <div style={tileImageWrapStyle}>
               {item.image_url && (
-                <img src={item.image_url} alt={item.name} style={tileImageStyle} />
+                <img src={item.image_url} alt={item.name} style={tileImageStyle} loading="lazy" />
               )}
             </div>
 
@@ -423,31 +400,21 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
   );
 }
 
-
-
-
 function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : 'Guest';
 
   return (
     <div style={hdrWrapStyle}>
-      {/* Top row: brand + compact notice */}
       <div style={hdrTopRowStyle}>
         <div style={hdrHelloStyle}>
           <span style={{ marginRight: 8 }}>👋</span>
           <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
         </div>
-
-        {/* Inline status chip (shows only when orders disabled) */}
-        {/* If you prefer to always show a small hint, keep it; else hide when accepting orders */}
-        {/* Example shows generic message; you can conditionally render from acceptingOrders */}
         <div style={noticeChipStyle}>Ordering paused</div>
       </div>
 
-      {/* Subtitle */}
       <div style={hdrSubStyle}>What are you craving today?</div>
 
-      {/* Actions row: search + cart */}
       <div style={hdrActionsRowStyle}>
         <input
           placeholder="Search for food..."
@@ -464,52 +431,11 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   );
 }
 
-
-/* Styles kept from previous step */
-const greetingContainerStyle = { marginBottom: 16 };
-const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '1.8rem', fontWeight: 700, color: '#1e293b' };
-const nameStyle = { fontWeight: 800, color: '#f97316' };
-const subheadingStyle = { margin: 0, fontSize: '1rem', color: '#64748b' };
-const searchInputStyle = {
-  padding: 10,
-  maxWidth: '45vw',
-  borderRadius: 12,
-  border: '1px solid #e2e8f0',
-  transition: 'all 0.2s ease-in-out',
-};
-
-const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 700 };
-const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 12, border: '1px solid #16a34a', background: '#ecfdf5', color: '#166534', cursor: 'pointer', fontWeight: 700 };
-const quantityButtonStyle = { width: 36, height: 36, borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
-
-const menuItemStyle = {
-  border: '1px solid #eef2f7',
-  borderRadius: 18,
-  overflow: 'hidden',
-  background: '#fff',
-  boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
-  display: 'flex',
-  flexDirection: 'column',
-  transition: 'transform .12s ease, box-shadow .12s ease',
-};
-
-const outOfStockButtonStyle = {
-  padding: '10px 16px',
-  borderRadius: 12,
-  background: '#e2e8f0',
-  color: '#64748b',
-  textAlign: 'center',
-  fontWeight: 700,
-};
-const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 12, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 700 };
-const demostyle = { color: 'red', fontWeight: 'bold' };
-const headerTitleStyle = { fontWeight: 800, color: '#f97316', marginRight: 'auto' };
-
+/* Styles */
 const floatingCartStyle = {
   position: 'fixed',
   left: 16,
   right: 16,
-  // Place pill above the bottom nav (assume nav height ≈ 56px)
   bottom: 'calc(56px + max(16px, env(safe-area-inset-bottom)))',
   zIndex: 1300,
   background: '#22c55e',
@@ -519,7 +445,6 @@ const floatingCartStyle = {
   padding: '14px 18px',
   boxShadow: '0 12px 24px rgba(34,197,94,0.35)',
 };
-
 
 const cartBadgeStyle = {
   width: 36,
@@ -568,56 +493,13 @@ const navLabelStyle = {
   marginTop: 2
 };
 
-const menuItemStyleCompact = {
-  border: '1px solid #eef2f7',
-  borderRadius: 12,
-  overflow: 'hidden',
-  background: '#fff',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
-  display: 'flex',
-  flexDirection: 'column',
-};
-
-const addToCartButtonStyleCompact = {
-  padding: '8px 12px',
-  borderRadius: 10,
-  border: '1px solid #16a34a',
-  background: '#ecfdf5',
-  color: '#166534',
-  cursor: 'pointer',
-  fontWeight: 700,
-  fontSize: 12,
-};
-
-const quantityButtonStyleCompact = {
-  width: 28,
-  height: 28,
-  borderRadius: 8,
-  border: '1px solid #e2e8f0',
-  background: '#fff',
-  cursor: 'pointer',
-  fontSize: '1rem',
-};
-
-const outOfStockButtonStyleCompact = {
-  padding: '8px 12px',
-  borderRadius: 10,
-  background: '#e2e8f0',
-  color: '#64748b',
-  textAlign: 'center',
-  fontWeight: 700,
-  fontSize: 12,
-};
-// 2-up compact grid like Categories
 const menuTilesGridStyle = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(2, 1fr)', // exactly two columns
+  gridTemplateColumns: 'repeat(2, 1fr)',
   gap: 12,
   marginTop: 8
 };
 
-
-// Card matches Categories aesthetics
 const menuTileCardStyle = {
   display: 'flex',
   flexDirection: 'column',
@@ -655,7 +537,7 @@ const tileSubStyle = {
   color: '#64748b',
   fontSize: 12,
   marginTop: 2,
-  minHeight: 20, // pick 20 or 24 and keep only one definition
+  minHeight: 20,
   overflow: 'hidden'
 };
 
