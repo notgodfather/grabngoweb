@@ -600,10 +600,11 @@ const outOfStockButtonStyleCompact = {
 // 2-up compact grid like Categories
 const menuTilesGridStyle = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+  gridTemplateColumns: 'repeat(2, 1fr)', // exactly two columns
   gap: 12,
   marginTop: 8
 };
+
 
 // Card matches Categories aesthetics
 const menuTileCardStyle = {
