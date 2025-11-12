@@ -16,6 +16,9 @@ export default function Home() {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
 
+  // bottom tabs: 'menu' | 'categories' | 'orders'
+  const [activeTab, setActiveTab] = useState('menu');
+
   const [cart, setCart] = useState(() => {
     try {
       const savedCart = localStorage.getItem('cart');
@@ -190,6 +193,11 @@ export default function Home() {
     }
   };
 
+  // navigate Orders tab to your existing page
+  const goToOrders = () => {
+    window.location.href = '/orders';
+  };
+
   return (
     <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
       {!acceptingOrders && (
@@ -206,7 +214,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Sticky Header wrapper */}
+      {/* Sticky Header */}
       <div style={{
         position: 'sticky',
         top: 0,
@@ -224,6 +232,12 @@ export default function Home() {
           cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
           onViewCart={() => setCartOpen(true)}
         />
+        {/* Tab Switcher header row style */}
+        <div style={{ display: 'flex', gap: 8, padding: '8px 0' }}>
+          <TabButton active={activeTab === 'menu'} onClick={() => setActiveTab('menu')} label="Menu" />
+          <TabButton active={activeTab === 'categories'} onClick={() => setActiveTab('categories')} label="Categories" />
+          <TabButton active={activeTab === 'orders'} onClick={() => { setActiveTab('orders'); goToOrders(); }} label="My Orders" />
+        </div>
       </div>
 
       {loading && <p>Loading menu...</p>}
@@ -231,18 +245,29 @@ export default function Home() {
 
       {!loading && (
         <>
-          <CategoryBar
-            categories={categories}
-            activeCategory={activeCat}
-            onCategoryChange={setActiveCat}
-          />
-          <MenuGrid
-            items={filteredItems}
-            onAddToCart={(item) => updateCartQuantity(item, 1)}
-            cart={cart}
-            onRemoveFromCart={(item) => updateCartQuantity(item, -1)}
-            acceptingOrders={acceptingOrders}
-          />
+          {activeTab === 'menu' && (
+            <>
+              <CategoryBar
+                categories={categories}
+                activeCategory={activeCat}
+                onCategoryChange={setActiveCat}
+              />
+              <MenuGrid
+                items={filteredItems}
+                onAddToCart={(item) => updateCartQuantity(item, 1)}
+                cart={cart}
+                onRemoveFromCart={(item) => updateCartQuantity(item, -1)}
+                acceptingOrders={acceptingOrders}
+              />
+            </>
+          )}
+
+          {activeTab === 'categories' && (
+            <CategoriesPage
+              categories={categories}
+              onPickCategory={(catId) => { setActiveCat(catId); setActiveTab('menu'); }}
+            />
+          )}
         </>
       )}
 
@@ -275,20 +300,89 @@ export default function Home() {
         </button>
       )}
 
-      {/* Bottom navigation */}
+      {/* Bottom navigation (icons + labels) */}
       <div style={bottomNavStyle} role="navigation" aria-label="Primary">
-        <button style={navBtnStyle}>🏠 Home</button>
-        <button style={navBtnStyle}>🧾 Orders</button>
-        <button style={navBtnStyle}>🗂️ Categories</button>
-        <button style={navBtnStyle}>👤 Profile</button>
+        <button
+          style={activeTab === 'menu' ? navBtnActiveStyle : navBtnStyle}
+          onClick={() => setActiveTab('menu')}
+        >
+          🍽️
+          <div style={navLabelStyle}>Menu</div>
+        </button>
+        <button
+          style={activeTab === 'categories' ? navBtnActiveStyle : navBtnStyle}
+          onClick={() => setActiveTab('categories')}
+        >
+          🗂️
+          <div style={navLabelStyle}>Categories</div>
+        </button>
+        <button
+          style={navBtnStyle}
+          onClick={() => { setActiveTab('orders'); goToOrders(); }}
+        >
+          🧾
+          <div style={navLabelStyle}>My Orders</div>
+        </button>
       </div>
+    </div>
+  );
+}
+
+/* Tabs in header */
+function TabButton({ active, onClick, label }) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        border: '1px solid #e2e8f0',
+        background: active ? '#f97316' : '#fff',
+        color: active ? '#fff' : '#0f172a',
+        padding: '6px 12px',
+        borderRadius: 999,
+        fontWeight: active ? 700 : 500,
+        cursor: 'pointer'
+      }}
+    >
+      {label}
+    </button>
+  );
+}
+
+function CategoriesPage({ categories, onPickCategory }) {
+  if (!categories?.length) {
+    return <p style={{ color: '#64748b' }}>No categories available.</p>;
+  }
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, marginTop: 12 }}>
+      {categories.map((c) => (
+        <button
+          key={c.id}
+          onClick={() => onPickCategory(c.id)}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            padding: 12,
+            borderRadius: 14,
+            border: '1px solid #eef2f7',
+            background: '#fff',
+            boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
+            textAlign: 'left',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ width: '100%', height: 80, borderRadius: 10, background: '#f8fafc', marginBottom: 8 }} />
+          <div style={{ fontWeight: 700 }}>{c.name}</div>
+          <div style={{ color: '#64748b', fontSize: 12 }}>Tap to view</div>
+        </button>
+      ))}
     </div>
   );
 }
 
 function CategoryBar({ categories, activeCategory, onCategoryChange }) {
   return (
-    <div style={{ display: 'flex', gap: 10, marginTop: 18, marginBottom: 18, overflowX: 'auto', paddingBottom: 10 }}>
+    <div style={{ display: 'flex', gap: 10, marginTop: 12, marginBottom: 12, overflowX: 'auto', paddingBottom: 10 }}>
       <CategoryPill label="All" active={activeCategory === 'all'} onClick={() => onCategoryChange('all')} />
       {categories.map((c) => (
         <CategoryPill key={c.id} label={c.name} active={activeCategory === c.id} onClick={() => onCategoryChange(c.id)} />
@@ -308,7 +402,7 @@ function CategoryPill({ label, active, onClick }) {
         background: active ? '#f97316' : '#fff',
         color: active ? '#fff' : '#0f172a',
         cursor: 'pointer',
-        fontWeight: active ? 600 : 400,
+        fontWeight: active ? 600 : 500,
         whiteSpace: 'nowrap',
       }}
     >
@@ -323,7 +417,7 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 20, marginTop: 20 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16, marginTop: 8 }}>
       {items.map((item) => {
         const cartItem = cart[item.id];
         const quantityInCart = cartItem?.qty || 0;
@@ -337,22 +431,22 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
               )}
             </div>
             <div style={{ padding: 14, display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>{item.name}</div>
-              <div style={{ color: '#64748b', fontSize: 14, minHeight: 40, overflow: 'hidden', marginTop: 4 }}>
+              <div style={{ fontWeight: 800, fontSize: '1.05rem' }}>{item.name}</div>
+              <div style={{ color: '#64748b', fontSize: 14, minHeight: 36, overflow: 'hidden', marginTop: 4 }}>
                 {item.description || 'A delicious and freshly prepared item.'}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', marginTop: 'auto', paddingTop: 12 }}>
-                <div style={{ fontWeight: 700, fontSize: '1.2rem' }}>{formatPrice(item.price)}</div>
+                <div style={{ fontWeight: 800, fontSize: '1.15rem' }}>{formatPrice(item.price)}</div>
                 <div style={{ marginLeft: 'auto' }}>
                   {isAvailable && acceptingOrders ? (
                     quantityInCart > 0 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <button onClick={() => onRemoveFromCart(item)} style={quantityButtonStyle}>−</button>
-                        <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 600 }}>{quantityInCart}</span>
+                        <span style={{ minWidth: 24, textAlign: 'center', fontWeight: 700 }}>{quantityInCart}</span>
                         <button onClick={() => onAddToCart(item)} style={quantityButtonStyle}>+</button>
                       </div>
                     ) : (
-                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add to Cart</button>
+                      <button onClick={() => onAddToCart(item)} style={addToCartButtonStyle}>Add</button>
                     )
                   ) : (
                     <div style={outOfStockButtonStyle}>
@@ -383,7 +477,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
           <p style={demostyle}>Keep checking your order status in My Orders Section and go pick your order when it's ready for pickup.</p>
         </div>
       )}
-      <div style={{ display: 'flex', gap: 16, alignItems: 'center', marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 16 }}>
         {!firstName && <h2 style={headerTitleStyle}>GrabNGo</h2>}
         <input
           placeholder="Search for food..."
@@ -403,25 +497,26 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
   );
 }
 
-const greetingContainerStyle = { marginBottom: 24 };
-const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '2rem', fontWeight: 600, color: '#1e293b' };
-const nameStyle = { fontWeight: 700, color: '#f97316' };
-const subheadingStyle = { margin: 0, fontSize: '1.1rem', color: '#64748b' };
+/* Styles */
+const greetingContainerStyle = { marginBottom: 16 };
+const greetingHeadingStyle = { margin: '0 0 4px 0', fontSize: '1.8rem', fontWeight: 700, color: '#1e293b' };
+const nameStyle = { fontWeight: 800, color: '#f97316' };
+const subheadingStyle = { margin: 0, fontSize: '1rem', color: '#64748b' };
 const searchInputStyle = {
   padding: 10,
   maxWidth: '45vw',
-  borderRadius: 10,
+  borderRadius: 12,
   border: '1px solid #e2e8f0',
   transition: 'all 0.2s ease-in-out',
 };
 
-const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 600 };
-const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#fff', color: '#f97316', cursor: 'pointer', fontWeight: 600 };
-const quantityButtonStyle = { width: 36, height: 36, borderRadius: 10, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
+const viewCartButtonStyle = { padding: '10px 16px', borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontWeight: 700 };
+const addToCartButtonStyle = { padding: '10px 16px', borderRadius: 12, border: '1px solid #16a34a', background: '#ecfdf5', color: '#166534', cursor: 'pointer', fontWeight: 700 };
+const quantityButtonStyle = { width: 36, height: 36, borderRadius: 12, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '1.2rem' };
 
 const menuItemStyle = {
   border: '1px solid #eef2f7',
-  borderRadius: 16,
+  borderRadius: 18,
   overflow: 'hidden',
   background: '#fff',
   boxShadow: '0 6px 18px rgba(0,0,0,0.06)',
@@ -432,17 +527,17 @@ const menuItemStyle = {
 
 const outOfStockButtonStyle = {
   padding: '10px 16px',
-  borderRadius: 10,
+  borderRadius: 12,
   background: '#e2e8f0',
   color: '#64748b',
   textAlign: 'center',
-  fontWeight: 600,
+  fontWeight: 700,
 };
-const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 10, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 600 };
+const filledCartButtonStyle = { padding: '10px 16px', borderRadius: 12, border: '1px solid #f97316', background: '#f97316', color: '#fff', cursor: 'pointer', fontWeight: 700 };
 const demostyle = { color: 'red', fontWeight: 'bold' };
-const headerTitleStyle = { fontWeight: 700, color: '#f97316', marginRight: 'auto' };
+const headerTitleStyle = { fontWeight: 800, color: '#f97316', marginRight: 'auto' };
 
-/* New styles */
+/* Floating cart pill */
 const floatingCartStyle = {
   position: 'fixed',
   left: 16,
@@ -465,9 +560,10 @@ const cartBadgeStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  fontWeight: 700,
+  fontWeight: 800,
 };
 
+/* Bottom nav */
 const bottomNavStyle = {
   position: 'fixed',
   left: 0,
@@ -476,8 +572,8 @@ const bottomNavStyle = {
   zIndex: 1200,
   background: '#fff',
   borderTop: '1px solid #e2e8f0',
-  padding: '8px 12px',
-  paddingBottom: 'calc(8px + env(safe-area-inset-bottom))',
+  padding: '6px 8px',
+  paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
   display: 'flex',
   justifyContent: 'space-around',
 };
@@ -485,6 +581,21 @@ const bottomNavStyle = {
 const navBtnStyle = {
   background: 'transparent',
   border: 'none',
-  fontSize: 12,
   color: '#0f172a',
+  fontSize: 18,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  gap: 2,
+};
+
+const navBtnActiveStyle = {
+  ...navBtnStyle,
+  color: '#f97316',
+  fontWeight: 800
+};
+
+const navLabelStyle = {
+  fontSize: 12,
+  marginTop: 2
 };
