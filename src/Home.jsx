@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
 
-export default function Home({ externalActiveTab = 'menu', onTabChange }) {
+export default function Home({ externalActiveTab = 'menu', onTabChange, setGlobalCartOpen }) {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
 
   const [categories, setCategories] = useState([]);
@@ -31,12 +31,21 @@ export default function Home({ externalActiveTab = 'menu', onTabChange }) {
 
   const [acceptingOrders, setAcceptingOrders] = useState(true);
 
+  // helpers to sync global nav visibility
+  const openCart = () => {
+    setCartOpen(true);
+    setGlobalCartOpen?.(true);
+  };
+  const closeCart = () => {
+    setCartOpen(false);
+    setGlobalCartOpen?.(false);
+  };
+
   // sync internal tab with global tab from router
   useEffect(() => {
     if (externalActiveTab === 'menu' || externalActiveTab === 'categories') {
       if (externalActiveTab !== activeTab) setActiveTab(externalActiveTab);
     }
-    // ignore 'orders' here; AppRouter navigates to /orders
   }, [externalActiveTab]);
 
   useEffect(() => {
@@ -190,7 +199,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange }) {
 
         alert('Payment successful! Your order has been placed.');
         setCart({});
-        setCartOpen(false);
+        closeCart(); // ensure nav returns
       } else {
         alert(`Payment status: ${verifyData.status}. Please check your order.`);
       }
@@ -232,7 +241,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange }) {
           search={search}
           onSearchChange={setSearch}
           cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
-          onViewCart={() => setCartOpen(true)}
+          onViewCart={openCart}
         />
       </div>
 
@@ -267,7 +276,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange }) {
       {isCartOpen && (
         <CartModal
           cart={cart}
-          onClose={() => setCartOpen(false)}
+          onClose={closeCart}
           onUpdateQuantity={(itemId, direction) => {
             const item = items.find(i => i.id === itemId);
             if (item) updateCartQuantity(item, direction);
@@ -283,7 +292,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange }) {
           <div style={{ height: 84 }} />
           {/* Floating "View cart" pill */}
           <button
-            onClick={() => setCartOpen(true)}
+            onClick={openCart}
             style={floatingCartStyle}
             aria-label="View cart"
           >
