@@ -371,35 +371,27 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
     return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
   }
 
-  const gridTileStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-    gap: 12,
-    marginTop: 8
-  };
-
   return (
-    <div style={gridTileStyle}>
+    <div style={menuTilesGridStyle}>
       {items.map((item) => {
-        const cartItem = cart[item.id];
-        const qty = cartItem?.qty || 0;
+        const qty = cart[item.id]?.qty || 0;
         const isAvailable = item.is_available;
 
         return (
-          <div key={item.id} style={{ ...menuTileStyle, opacity: isAvailable ? 1 : 0.6 }}>
+          <button
+            key={item.id}
+            style={{ ...menuTileCardStyle, opacity: isAvailable ? 1 : 0.6 }}
+            onClick={() => { /* optional: open details later */ }}
+          >
             <div style={tileImageWrapStyle}>
               {item.image_url && (
-                <img
-                  src={item.image_url}
-                  alt={item.name}
-                  style={tileImageStyle}
-                />
+                <img src={item.image_url} alt={item.name} style={tileImageStyle} />
               )}
             </div>
 
-            <div style={{ paddingTop: 8, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ paddingTop: 8, width: '100%' }}>
               <div style={tileNameStyle}>{item.name}</div>
-              <div style={tileSubStyle}>{item.description || 'Tap to view'}</div>
+              <div style={tileSubStyle}>Tap to view</div>
 
               <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
                 <div style={tilePriceStyle}>{formatPrice(item.price)}</div>
@@ -407,12 +399,12 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
                   {isAvailable && acceptingOrders ? (
                     qty > 0 ? (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <button onClick={() => onRemoveFromCart(item)} style={qtyBtnTileStyle}>−</button>
+                        <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(item); }} style={qtyBtnTileStyle}>−</button>
                         <span style={qtyCountStyle}>{qty}</span>
-                        <button onClick={() => onAddToCart(item)} style={qtyBtnTileStyle}>+</button>
+                        <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={qtyBtnTileStyle}>+</button>
                       </div>
                     ) : (
-                      <button onClick={() => onAddToCart(item)} style={addTileBtnStyle}>ADD</button>
+                      <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={addTileBtnStyle}>ADD</button>
                     )
                   ) : (
                     <div style={tileOutStyle}>{acceptingOrders ? 'Out' : 'Paused'}</div>
@@ -420,12 +412,13 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
                 </div>
               </div>
             </div>
-          </div>
+          </button>
         );
       })}
     </div>
   );
 }
+
 
 
 
@@ -688,3 +681,97 @@ const tileOutStyle = {
   fontSize: 12
 };
 
+// 2-up compact grid like Categories
+const menuTilesGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
+  gap: 12,
+  marginTop: 8
+};
+
+// Card matches Categories aesthetics
+const menuTileCardStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  textAlign: 'left',
+  padding: 12,
+  borderRadius: 14,
+  border: '1px solid #eef2f7',
+  background: '#fff',
+  boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
+  cursor: 'pointer'
+};
+
+const tileImageWrapStyle = {
+  width: '100%',
+  height: 110,
+  borderRadius: 12,
+  background: '#f8fafc',
+  overflow: 'hidden'
+};
+
+const tileImageStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover'
+};
+
+const tileNameStyle = {
+  fontWeight: 700,
+  fontSize: '0.95rem',
+  lineHeight: 1.2,
+  color: '#0f172a'
+};
+
+const tileSubStyle = {
+  color: '#64748b',
+  fontSize: 12,
+  marginTop: 2,
+  minHeight: 20,
+  overflow: 'hidden'
+};
+
+const tilePriceStyle = {
+  fontWeight: 800,
+  fontSize: '0.95rem',
+  color: '#0f172a'
+};
+
+const addTileBtnStyle = {
+  padding: '6px 10px',
+  borderRadius: 999,
+  border: '1px solid #16a34a',
+  background: '#ecfdf5',
+  color: '#166534',
+  cursor: 'pointer',
+  fontWeight: 800,
+  fontSize: 12,
+  lineHeight: 1
+};
+
+const qtyBtnTileStyle = {
+  width: 28,
+  height: 28,
+  borderRadius: 999,
+  border: '1px solid #e2e8f0',
+  background: '#fff',
+  cursor: 'pointer',
+  fontSize: '1rem',
+  lineHeight: 1
+};
+
+const qtyCountStyle = {
+  minWidth: 18,
+  textAlign: 'center',
+  fontWeight: 800,
+  fontSize: 12
+};
+
+const tileOutStyle = {
+  padding: '6px 10px',
+  borderRadius: 999,
+  background: '#e2e8f0',
+  color: '#64748b',
+  fontWeight: 700,
+  fontSize: 12
+};
