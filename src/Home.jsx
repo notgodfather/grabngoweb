@@ -206,13 +206,22 @@ export default function Home() {
         </div>
       )}
 
-      <Header
-        profile={profile}
-        search={search}
-        onSearchChange={setSearch}
-        cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
-        onViewCart={() => setCartOpen(true)}
-      />
+      {/* Sticky Header wrapper */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        background: '#fff',
+        paddingTop: 'max(0px, env(safe-area-inset-top))'
+      }}>
+        <Header
+          profile={profile}
+          search={search}
+          onSearchChange={setSearch}
+          cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
+          onViewCart={() => setCartOpen(true)}
+        />
+      </div>
 
       {loading && <p>Loading menu...</p>}
       {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
