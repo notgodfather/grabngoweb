@@ -294,29 +294,32 @@ export default function Home() {
   </>
 )}
 
-      <div style={bottomNavStyle} role="navigation" aria-label="Primary">
-        <button
-          style={activeTab === 'menu' ? navBtnActiveStyle : navBtnStyle}
-          onClick={() => setActiveTab('menu')}
-        >
-          🍽️
-          <div style={navLabelStyle}>Menu</div>
-        </button>
-        <button
-          style={activeTab === 'categories' ? navBtnActiveStyle : navBtnStyle}
-          onClick={() => setActiveTab('categories')}
-        >
-          🗂️
-          <div style={navLabelStyle}>Categories</div>
-        </button>
-        <button
-          style={navBtnStyle}
-          onClick={() => { setActiveTab('orders'); goToOrders(); }}
-        >
-          🧾
-          <div style={navLabelStyle}>My Orders</div>
-        </button>
-      </div>
+      {!isCartOpen && (
+  <div style={bottomNavStyle} role="navigation" aria-label="Primary">
+    <button
+      style={activeTab === 'menu' ? navBtnActiveStyle : navBtnStyle}
+      onClick={() => setActiveTab('menu')}
+    >
+      🍽️
+      <div style={navLabelStyle}>Menu</div>
+    </button>
+    <button
+      style={activeTab === 'categories' ? navBtnActiveStyle : navBtnStyle}
+      onClick={() => setActiveTab('categories')}
+    >
+      🗂️
+      <div style={navLabelStyle}>Categories</div>
+    </button>
+    <button
+      style={navBtnStyle}
+      onClick={() => { setActiveTab('orders'); goToOrders(); }}
+    >
+      🧾
+      <div style={navLabelStyle}>My Orders</div>
+    </button>
+  </div>
+)}
+
     </div>
   );
 }
