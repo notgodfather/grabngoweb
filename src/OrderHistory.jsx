@@ -9,34 +9,53 @@ export default function OrderHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setErr] = useState('');
 
-  useEffect(() => {
-    const fetchUserOrders = async () => {
-      setLoading(true); 
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, order_items(*, food_items(name, image_url))')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+  const fetchUserOrders = async () => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*, food_items(name, image_url))')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-      if (error) {
-        setErr(error.message);
-        console.error("Error fetching user orders:", error);
-      } else {
-        setOrders(data || []);
-      }
-      setLoading(false);
-    };
-
-    if (userId) {
-      fetchUserOrders();
-      const interval = setInterval(fetchUserOrders, 10000);
-      return () => clearInterval(interval);
+    if (error) {
+      setErr(error.message);
+      console.error("Error fetching user orders", error);
     } else {
-      setLoading(false);
+      setOrders(data || []);
     }
-  }, [userId]);
+    setLoading(false);
+  };
+useEffect(() => {
+  const fetchUserOrders = async () => {
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*, food_items(name, image_url))')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
-  if (loading && orders.length === 0) return <div style={{ padding: 24 }}>Loading your orders...</div>;
+    if (error) {
+      setErr(error.message);
+      console.error("Error fetching user orders", error);
+    } else {
+      setOrders(data || []);
+    }
+    setLoading(false);
+  };
+
+  if (userId) {
+    fetchUserOrders();
+
+    const interval = setInterval(() => {
+      fetchUserOrders();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }
+}, [userId]);
+
+
+  if (loading) return <div style={{ padding: 24 }}>Loading your orders...</div>;
   if (error) return <div style={{ padding: 24, color: '#b91c1c' }}>{error}</div>;
 
   return (
@@ -47,8 +66,7 @@ export default function OrderHistory() {
       ) : (
         <div style={{ display: 'grid', gap: 16, marginTop: 12 }}>
           {orders.map((o) => {
-            const total = Array.isArray(o.order_items) 
-              ? o.order_items.reduce((sum, r) => sum + Number(r.price) * r.qty, 0) : 0;
+            const total = o.order_items.reduce((sum, r) => sum + Number(r.price) * r.qty, 0);
             return (
               <div key={o.id} style={{ border: '1px solid #eef2f7', borderRadius: 12, padding: 14, background: '#fff' }}>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -59,7 +77,7 @@ export default function OrderHistory() {
                   <span style={userStatusPillStyle(o.status)}>{o.status}</span>
                 </div>
                 <div style={{ marginTop: 12, display: 'grid', gap: 8, borderTop: '1px solid #eef2f7', paddingTop: 12 }}>
-                  {Array.isArray(o.order_items) && o.order_items.map((r) => (
+                  {o.order_items.map((r) => (
                     <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       {r.food_items?.image_url ? (
                         <img src={r.food_items.image_url} alt="" width={44} height={44} style={{ borderRadius: 8, objectFit: 'cover' }} />
@@ -83,12 +101,11 @@ export default function OrderHistory() {
     </div>
   );
 }
-
 const userStatusPillStyle = (status) => ({
-  padding: '4px 10px',
-  borderRadius: 999,
-  fontWeight: 600,
-  fontSize: 12,
-  backgroundColor: status === 'Ready for Pickup' ? '#22c55e' : (status === 'Preparing' ? '#f59e0b' : '#d1d5db'),
-  color: status === 'Ready for Pickup' ? '#fff' : '#1f2937',
+    padding: '4px 10px',
+    borderRadius: 999,
+    fontWeight: 600,
+    fontSize: 12,
+    backgroundColor: status === 'Ready for Pickup' ? '#22c55e' : (status === 'Preparing' ? '#f59e0b' : '#d1d5db'),
+    color: status === 'Ready for Pickup' ? '#fff' : '#1f2937',
 });
