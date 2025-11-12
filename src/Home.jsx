@@ -229,11 +229,6 @@ export default function Home() {
           cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
           onViewCart={() => setCartOpen(true)}
         />
-        <div style={{ display: 'flex', gap: 8, padding: '8px 0' }}>
-          <TabButton active={activeTab === 'menu'} onClick={() => setActiveTab('menu')} label="Menu" />
-          <TabButton active={activeTab === 'categories'} onClick={() => setActiveTab('categories')} label="Categories" />
-          <TabButton active={activeTab === 'orders'} onClick={() => { setActiveTab('orders'); goToOrders(); }} label="My Orders" />
-        </div>
       </div>
 
       {loading && <p>Loading menu...</p>}
