@@ -273,7 +273,7 @@ export default function Home() {
         />
       )}
 
-      {cartArray.length > 0 && (
+      {cartArray.length > 0 && !isCartOpen && (
         <button
           onClick={() => setCartOpen(true)}
           style={floatingCartStyle}
