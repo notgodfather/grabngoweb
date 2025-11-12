@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
 
-export default function Home() {
+export default function Home({ externalActiveTab = 'menu', onTabChange }) {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
 
   const [categories, setCategories] = useState([]);
@@ -16,6 +16,7 @@ export default function Home() {
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
 
+  // local tab for Menu | Categories; 'orders' is handled by router
   const [activeTab, setActiveTab] = useState('menu');
 
   const [cart, setCart] = useState(() => {
@@ -29,6 +30,14 @@ export default function Home() {
   });
 
   const [acceptingOrders, setAcceptingOrders] = useState(true);
+
+  // sync internal tab with global tab from router
+  useEffect(() => {
+    if (externalActiveTab === 'menu' || externalActiveTab === 'categories') {
+      if (externalActiveTab !== activeTab) setActiveTab(externalActiveTab);
+    }
+    // ignore 'orders' here; AppRouter navigates to /orders
+  }, [externalActiveTab]);
 
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
@@ -192,10 +201,6 @@ export default function Home() {
     }
   };
 
-  const goToOrders = () => {
-    window.location.href = '/orders';
-  };
-
   return (
     <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
       {!acceptingOrders && (
@@ -249,7 +254,11 @@ export default function Home() {
           {activeTab === 'categories' && (
             <CategoriesPage
               categories={categories}
-              onPickCategory={(catId) => { setActiveCat(catId); setActiveTab('menu'); }}
+              onPickCategory={(catId) => {
+                setActiveCat(catId);
+                setActiveTab('menu');
+                onTabChange?.('menu');
+              }}
             />
           )}
         </>
@@ -270,7 +279,9 @@ export default function Home() {
 
       {cartArray.length > 0 && !isCartOpen && (
         <>
+          {/* Spacer so content and global bottom nav aren’t covered */}
           <div style={{ height: 84 }} />
+          {/* Floating "View cart" pill */}
           <button
             onClick={() => setCartOpen(true)}
             style={floatingCartStyle}
@@ -284,32 +295,6 @@ export default function Home() {
             </div>
           </button>
         </>
-      )}
-
-      {!isCartOpen && (
-        <div style={bottomNavStyle} role="navigation" aria-label="Primary">
-          <button
-            style={activeTab === 'menu' ? navBtnActiveStyle : navBtnStyle}
-            onClick={() => setActiveTab('menu')}
-          >
-            🍽️
-            <div style={navLabelStyle}>Menu</div>
-          </button>
-          <button
-            style={activeTab === 'categories' ? navBtnActiveStyle : navBtnStyle}
-            onClick={() => setActiveTab('categories')}
-          >
-            🗂️
-            <div style={navLabelStyle}>Categories</div>
-          </button>
-          <button
-            style={navBtnStyle}
-            onClick={() => { setActiveTab('orders'); goToOrders(); }}
-          >
-            🧾
-            <div style={navLabelStyle}>My Orders</div>
-          </button>
-        </div>
       )}
     </div>
   );
@@ -455,42 +440,6 @@ const cartBadgeStyle = {
   alignItems: 'center',
   justifyContent: 'center',
   fontWeight: 800,
-};
-
-const bottomNavStyle = {
-  position: 'fixed',
-  left: 0,
-  right: 0,
-  bottom: 0,
-  zIndex: 1200,
-  background: '#fff',
-  borderTop: '1px solid #e2e8f0',
-  padding: '6px 8px',
-  paddingBottom: 'calc(6px + env(safe-area-inset-bottom))',
-  display: 'flex',
-  justifyContent: 'space-around',
-};
-
-const navBtnStyle = {
-  background: 'transparent',
-  border: 'none',
-  color: '#0f172a',
-  fontSize: 18,
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: 2,
-};
-
-const navBtnActiveStyle = {
-  ...navBtnStyle,
-  color: '#f97316',
-  fontWeight: 800
-};
-
-const navLabelStyle = {
-  fontSize: 12,
-  marginTop: 2
 };
 
 const menuTilesGridStyle = {
