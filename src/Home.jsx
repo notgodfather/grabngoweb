@@ -199,7 +199,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
         alert('Payment successful! Your order has been placed.');
         setCart({});
-        closeCart(); // ensure nav returns
+        closeCart();
       } else {
         alert(`Payment status: ${verifyData.status}. Please check your order.`);
       }
