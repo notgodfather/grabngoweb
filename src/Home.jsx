@@ -237,12 +237,14 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         paddingTop: 'max(0px, env(safe-area-inset-top))'
       }}>
         <Header
-          profile={profile}
-          search={search}
-          onSearchChange={setSearch}
-          cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
-          onViewCart={openCart}
-        />
+  profile={profile}
+  search={search}
+  onSearchChange={setSearch}
+  cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
+  onViewCart={openCart}
+  acceptingOrders={acceptingOrders}
+/>
+
       </div>
 
       {loading && <p>Loading menu...</p>}
@@ -394,7 +396,7 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
   );
 }
 
-function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
+function Header({ profile, search, onSearchChange, cartCount, onViewCart, acceptingOrders }) {
   const firstName = profile?.name ? profile.name.split(' ')[0] : 'Guest';
 
   return (
@@ -404,7 +406,10 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
           <span style={{ marginRight: 8 }}>👋</span>
           <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
         </div>
-        <div style={noticeChipStyle}>Ordering paused</div>
+        {/* Only show chip when ordering is paused */}
+        {!acceptingOrders && (
+          <div style={noticeChipStyle}>Ordering paused</div>
+        )}
       </div>
 
       <div style={hdrSubStyle}>What are you craving today?</div>
@@ -424,6 +429,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart }) {
     </div>
   );
 }
+
 
 /* Styles */
 const floatingCartStyle = {
