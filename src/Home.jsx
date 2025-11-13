@@ -14,7 +14,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [error, setError] = useState('');
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
-  const [paymentVerificationStatus, setPaymentVerificationStatus] = useState(''); // New state for status
+  const [paymentVerificationStatus, setPaymentVerificationStatus] = useState(''); 
 
   // local tab for Menu | Categories; 'orders' is handled by router
   const [activeTab, setActiveTab] = useState('menu');
@@ -52,13 +52,13 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  // --- NEW EFFECT FOR HANDLING REDIRECTED PAYMENT STATUS ---
+  // 🌟 CRITICAL FIX: EFFECT FOR HANDLING REDIRECTED PAYMENT STATUS 🌟
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const orderId = params.get('order_id');
     
+    // Only proceed if an order ID is present and the user profile is loaded
     if (orderId && profile?.sub) {
-      // We found an order ID in the URL, indicating a payment redirect.
       // Clear the orderId from the URL immediately to prevent re-running on next refresh.
       window.history.replaceState(null, '', window.location.pathname);
       
@@ -121,7 +121,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       verifyAndRecord();
     }
   }, [profile]); 
-  // --- END NEW EFFECT ---
+  // --- END CRITICAL FIX ---
 
 
   useEffect(() => {
@@ -240,14 +240,11 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
       const cashfree = window.Cashfree({ mode });
 
-      // Step 2: Launch checkout and let it redirect the entire browser window 
-      // (to be picked up by the new useEffect hook upon page reload)
+      // Step 2: Launch checkout and let it redirect the entire browser window
       await cashfree.checkout({
         paymentSessionId: data.paymentSessionId,
         redirectTarget: '_self' // ensures full redirect
       });
-      
-      // Note: Code here will likely not execute due to browser redirect.
 
     } catch (err) {
       alert(`Payment failed or interrupted: ${err.message}`);
