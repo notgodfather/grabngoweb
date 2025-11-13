@@ -44,11 +44,21 @@ export default function AppRouter() {
           path="/home"
           element={
             <ProtectedRoute>
-              <Home
-                externalActiveTab={activeTab}
-                onTabChange={setActiveTab}
-                setGlobalCartOpen={setIsCartOpenFromHome}
-              />
+              <>
+                <Home
+                  externalActiveTab={activeTab}
+                  onTabChange={setActiveTab}
+                  setGlobalCartOpen={setIsCartOpenFromHome}
+                />
+                {!isCartOpenFromHome && (
+                  <BottomNav
+                    active={activeTab}
+                    onMenu={goMenu}
+                    onCategories={goCategories}
+                    onOrders={goOrders}
+                  />
+                )}
+              </>
             </ProtectedRoute>
           }
         />
@@ -56,23 +66,23 @@ export default function AppRouter() {
           path="/orders"
           element={
             <ProtectedRoute>
-              <OrderHistory />
+              <>
+                <OrderHistory />
+                {!isCartOpenFromHome && (
+                  <BottomNav
+                    active={activeTab}
+                    onMenu={goMenu}
+                    onCategories={goCategories}
+                    onOrders={goOrders}
+                  />
+                )}
+              </>
             </ProtectedRoute>
           }
         />
         <Route path="/admin/items" element={<AdminRoute><AdminItems /></AdminRoute>} />
         <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
       </Routes>
-
-      {/* Global Bottom Nav across /home and /orders - hidden when cart is open */}
-      {!isCartOpenFromHome && (
-        <BottomNav
-          active={activeTab}
-          onMenu={goMenu}
-          onCategories={goCategories}
-          onOrders={goOrders}
-        />
-      )}
     </>
   );
 }
@@ -142,9 +152,21 @@ function TopNav() {
     window.location.reload();
   };
 
+  const navStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    padding: '10px 24px',
+    borderBottom: '1px solid #eef2f7',
+    background: '#fff',
+  };
+
+  const linkStyle = { textDecoration: 'none', color: '#334155', fontWeight: '400' };
+  const adminLinkStyle = { ...linkStyle, background: '#f1f5f9', color: '#1e293b', padding: '8px 12px', borderRadius: 8 };
+  const logoutButtonStyle = { background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' };
+
   return (
     <nav style={navStyle}>
-      <span style={{fontWeight:'bold', fontSize:'18px'}}>GrabNGo</span>
+      <span style={{ fontWeight: 'bold', fontSize: '18px' }}>GrabNGo</span>
       <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 16 }}>
         <Link to="/home" style={linkStyle}>Menu</Link>
         <Link to="/orders" style={linkStyle}>My Orders</Link>
@@ -159,14 +181,3 @@ function TopNav() {
     </nav>
   );
 }
-
-const navStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  padding: '10px 24px',
-  borderBottom: '1px solid #eef2f7',
-  background: '#fff',
-};
-const linkStyle = { textDecoration: 'none', color: '#334155', fontWeight: '400' };
-const adminLinkStyle = { ...linkStyle, background: '#f1f5f9', color: '#1e293b', padding: '8px 12px', borderRadius: 8 };
-const logoutButtonStyle = { background: '#fee2e2', color: '#b91c1c', border: '1px solid #fecaca', padding: '8px 12px', borderRadius: 8, fontWeight: 600, cursor: 'pointer' };
