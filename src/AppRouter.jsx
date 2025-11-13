@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
 import { googleLogout } from '@react-oauth/google';
 import { ADMIN_EMAILS } from './config.js';
+import PgReturn from './PgReturn.jsx';
 import LoginPage from './App.jsx';
 import Home from './Home.jsx';
 import OrderHistory from './OrderHistory.jsx';
@@ -38,6 +39,7 @@ export default function AppRouter() {
     <>
       <TopNav />
       <Routes>
+        <Route path="/pg/return" element={<PgReturn />} />
         <Route path="/" element={<LoginPage />} />
         <Route path="/about" element={<AboutUs />} />
         <Route
