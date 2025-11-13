@@ -404,7 +404,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart, accept
       <div style={hdrTopRowStyle}>
         <div style={hdrHelloStyle}>
           <span style={{ marginRight: 8 }}>👋</span>
-          <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
+          <span style={{ fontWeight: 800 }}>Hi, {firstName} <br></span>
           <span style={{fontWeight: 300, color: 'red'}}>Keep checking your order status in my orders section, once it's ready for pickup go and pick you order from VIDYARTHI KHANA</span>
         </div>
         {/* Only show chip when ordering is paused */}
