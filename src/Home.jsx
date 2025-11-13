@@ -8,7 +8,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
-
   const [search, setSearch] = useState('');
   const [activeCat, setActiveCat] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -117,106 +116,105 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const cartArray = Object.values(cart);
   const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
 
-const handleCheckout = async (totalAmount) => {
-  if (!acceptingOrders) {
-    alert('Online ordering is temporarily disabled. Please try again later.');
-    return;
-  }
-  if (!profile?.sub) {
-    alert('You must be logged in to place an order.');
-    return;
-  }
-  if (cartArray.length === 0) return;
-
-  setCheckingOut(true);
-
-  try {
-    const userDetails = {
-      uid: profile.sub,
-      displayName: profile.name || 'Guest',
-      email: profile.email || 'noemail@example.com',
-      phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
-    };
-
-    // Step 1: Create order & get payment session
-    const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        amount: totalAmount,
-        currency: 'INR',
-        cart: cartArray.map(ci => ({
-          price: Number(ci.item.price),
-          quantity: ci.qty,
-          id: ci.item.id,
-          name: ci.item.name,
-          image: ci.item.image_url,
-        })),
-        user: userDetails,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
-
-    if (!window.Cashfree) {
-      alert('Cashfree SDK not loaded');
-      setCheckingOut(false);
+  const handleCheckout = async (totalAmount) => {
+    if (!acceptingOrders) {
+      alert('Online ordering is temporarily disabled. Please try again later.');
       return;
     }
+    if (!profile?.sub) {
+      alert('You must be logged in to place an order.');
+      return;
+    }
+    if (cartArray.length === 0) return;
 
-    const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
-    const cashfree = window.Cashfree({ mode });
+    setCheckingOut(true);
 
-    // Step 2: Launch checkout and wait for result
-    const result = await cashfree.checkout({
-      paymentSessionId: data.paymentSessionId,
-      redirectTarget: 'modal', // use modal or frame, not '_modal' string
-    });
+    try {
+      const userDetails = {
+        uid: profile.sub,
+        displayName: profile.name || 'Guest',
+        email: profile.email || 'noemail@example.com',
+        phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
+      };
 
-    // Step 3: Check payment status from checkout result
-    if (result && (result.status === 'SUCCESS' || result.status === 'PAID')) {
-      // Step 4: Verify payment on backend
-      const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
+      // Step 1: Create order & get payment session
+      const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: data.orderId }),
+        body: JSON.stringify({
+          amount: totalAmount,
+          currency: 'INR',
+          cart: cartArray.map(ci => ({
+            price: Number(ci.item.price),
+            quantity: ci.qty,
+            id: ci.item.id,
+            name: ci.item.name,
+            image: ci.item.image_url,
+          })),
+          user: userDetails,
+        }),
       });
 
-      const verifyData = await verifyResponse.json();
-      if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
-      if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-        // Step 5: Record order in database
-        const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
+      if (!window.Cashfree) {
+        alert('Cashfree SDK not loaded');
+        setCheckingOut(false);
+        return;
+      }
+
+      const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
+      const cashfree = window.Cashfree({ mode });
+
+      // Step 2: Launch checkout and wait for result
+      const result = await cashfree.checkout({
+        paymentSessionId: data.paymentSessionId,
+        redirectTarget: 'modal'
+      });
+
+      // Step 3: Check payment status from checkout result
+      if (result && (result.status === 'SUCCESS' || result.status === 'PAID')) {
+        // Step 4: Verify payment on backend
+        const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: profile.sub,
-            userEmail: profile.email,
-            cart: cartArray,
-            orderId: data.orderId,
-          }),
+          body: JSON.stringify({ orderId: data.orderId }),
         });
-        const recordData = await recordResponse.json();
-        if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
 
-        alert('Payment successful! Your order has been placed.');
-        setCart({});
-        closeCart();
+        const verifyData = await verifyResponse.json();
+        if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+
+        if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
+          // Step 5: Record order in database
+          const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: profile.sub,
+              userEmail: profile.email,
+              cart: cartArray,
+              orderId: data.orderId,
+            }),
+          });
+          const recordData = await recordResponse.json();
+          if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
+
+          alert('Payment successful! Your order has been placed.');
+          setCart({});
+          closeCart();
+        } else {
+          alert(`Payment status: ${verifyData.status}. Please check your order.`);
+        }
       } else {
-        alert(`Payment status: ${verifyData.status}. Please check your order.`);
+        alert('Payment was not successful. Please try again.');
       }
-    } else {
-      alert('Payment was not successful. Please try again.');
+    } catch (err) {
+      alert(`Payment failed or interrupted: ${err.message}`);
+    } finally {
+      setCheckingOut(false);
     }
-  } catch (err) {
-    alert(`Payment failed or interrupted: ${err.message}`);
-  } finally {
-    setCheckingOut(false);
-  }
-};
-
+  };
 
   return (
     <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
@@ -245,14 +243,13 @@ const handleCheckout = async (totalAmount) => {
         paddingTop: 'max(0px, env(safe-area-inset-top))'
       }}>
         <Header
-  profile={profile}
-  search={search}
-  onSearchChange={setSearch}
-  cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
-  onViewCart={openCart}
-  acceptingOrders={acceptingOrders}
-/>
-
+          profile={profile}
+          search={search}
+          onSearchChange={setSearch}
+          cartCount={cartArray.reduce((n, ci) => n + ci.qty, 0)}
+          onViewCart={openCart}
+          acceptingOrders={acceptingOrders}
+        />
       </div>
 
       {loading && <p>Loading menu...</p>}
@@ -298,9 +295,7 @@ const handleCheckout = async (totalAmount) => {
 
       {cartArray.length > 0 && !isCartOpen && (
         <>
-          {/* Spacer so content and global bottom nav aren’t covered */}
           <div style={{ height: 84 }} />
-          {/* Floating "View cart" pill */}
           <button
             onClick={openCart}
             style={floatingCartStyle}
@@ -318,6 +313,8 @@ const handleCheckout = async (totalAmount) => {
     </div>
   );
 }
+
+
 
 function CategoriesPage({ categories, onPickCategory }) {
   if (!categories?.length) {
