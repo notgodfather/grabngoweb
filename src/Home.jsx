@@ -15,6 +15,9 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
   const [paymentVerificationStatus, setPaymentVerificationStatus] = useState(''); 
+  
+  // 🌟 NEW STATE: To hold the orderId from the URL until verification runs 🌟
+  const [pendingOrderId, setPendingOrderId] = useState(null); 
 
   // local tab for Menu | Categories; 'orders' is handled by router
   const [activeTab, setActiveTab] = useState('menu');
@@ -52,22 +55,35 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     localStorage.setItem('cart', JSON.stringify(cart));
   }, [cart]);
 
-  // 🌟 CRITICAL FIX: EFFECT FOR HANDLING REDIRECTED PAYMENT STATUS 🌟
+
+  // 🌟 ADJUSTED EFFECT 1: Check URL for orderId and save to state (Runs once on mount) 🌟
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlOrderId = params.get('order_id');
+
+    if (urlOrderId && !pendingOrderId) {
+        // Save the orderId to state to be processed when profile is ready
+        setPendingOrderId(urlOrderId);
+    }
+  }, []); 
+
+
+  // 🌟 ADJUSTED EFFECT 2: Run verification only when profile AND pendingOrderId are ready 🌟
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const orderId = params.get('order_id');
+    const orderIdToProcess = pendingOrderId;
     
-    // Only proceed if an order ID is present and the user profile is loaded
-    if (orderId && profile?.sub) {
-      // Clear the orderId from the URL immediately to prevent re-running on next refresh.
-      window.history.replaceState(null, '', window.location.pathname);
+    // Only proceed if an order ID is pending AND the user profile is loaded
+    if (orderIdToProcess && profile?.sub) {
       
       setCheckingOut(true);
       setPaymentVerificationStatus('Verifying payment status...');
+      
+      // Clear pendingOrderId immediately to prevent re-running on profile changes
+      setPendingOrderId(null);
 
       const verifyAndRecord = async () => {
         try {
-          // Step 1: Get cart data from localStorage 
+          // Step 1: Get cart data from localStorage (it was saved before checkout)
           const savedCart = JSON.parse(localStorage.getItem('cart') || '{}');
           const cartArray = Object.values(savedCart);
           if (cartArray.length === 0) {
@@ -79,7 +95,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
           const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId: orderId }),
+            body: JSON.stringify({ orderId: orderIdToProcess }),
           });
 
           const verifyData = await verifyResponse.json();
@@ -96,14 +112,14 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
                 userId: profile.sub,
                 userEmail: profile.email,
                 cart: cartArray,
-                orderId: orderId,
+                orderId: orderIdToProcess,
               }),
             });
             const recordData = await recordResponse.json();
             if (!recordResponse.ok) throw new Error(recordData.error || 'Failed to record order');
 
             alert('Payment successful! Your order has been placed.');
-            setCart({}); // Clear cart upon successful order
+            setCart({}); 
             closeCart();
             setPaymentVerificationStatus('Order placed successfully!');
           } else {
@@ -114,18 +130,22 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
           alert(`Payment verification failed: ${err.message}`);
           setPaymentVerificationStatus(`Verification Error: ${err.message}`);
         } finally {
+          // 🌟 IMPORTANT: Clear the URL after processing is complete 🌟
+          window.history.replaceState(null, '', window.location.pathname);
           setCheckingOut(false);
         }
       };
 
       verifyAndRecord();
     }
-  }, [profile]); 
-  // --- END CRITICAL FIX ---
+  // Depend on both profile and the pending order state
+  }, [profile, pendingOrderId]); 
+  // --- END ROBUST VERIFICATION FIX ---
 
 
   useEffect(() => {
     let isMounted = true;
+// ... (rest of the loadData useEffect is unchanged)
     async function loadData() {
       setLoading(true);
       setError('');
@@ -223,6 +243,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
             id: ci.item.id,
             name: ci.item.name,
             image: ci.item.image_url,
+            // Ensure all necessary item details are passed/available if needed by backend later
           })),
           user: userDetails,
         }),
@@ -243,7 +264,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       // Step 2: Launch checkout and let it redirect the entire browser window
       await cashfree.checkout({
         paymentSessionId: data.paymentSessionId,
-        redirectTarget: '_self' // ensures full redirect
+        redirectTarget: '_self' // ensures full redirect to the URL defined in the backend
       });
 
     } catch (err) {
@@ -253,6 +274,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   };
 
   return (
+// ... (rest of the file is unchanged)
     <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
       {!acceptingOrders && (
         <div style={{
@@ -370,6 +392,7 @@ function CategoriesPage({ categories, onPickCategory }) {
   if (!categories?.length) {
     return <p style={{ color: '#64748b' }}>No categories available.</p>;
   }
+  // ... (rest of CategoriesPage is unchanged)
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, marginTop: 12 }}>
       {categories.map((c) => (
