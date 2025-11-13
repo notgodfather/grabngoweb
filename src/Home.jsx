@@ -170,7 +170,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       // Step 2: Launch checkout and wait for result
       const result = await cashfree.checkout({
         paymentSessionId: data.paymentSessionId,
-        redirectTarget: 'frame'
+        redirectTarget: '_self'
       });
 
       // Step 3: Check payment status from checkout result
