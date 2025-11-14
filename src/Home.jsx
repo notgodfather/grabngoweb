@@ -334,14 +334,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       )}
 
       {/* In-flight info pill during webhook finalization */}
-      {inFlightOrderId && (
-        <div style={floatingInfoStyle}>
-          <p style={{ margin: 0, fontWeight: 700 }}>⏳ Finalizing Order</p>
-          <p style={{ margin: '4px 0 0 0', fontSize: 13 }}>
-            Order {inFlightOrderId} is being confirmed. This may take up to a minute.
-          </p>
-        </div>
-      )}
     </div>
   );
 }
