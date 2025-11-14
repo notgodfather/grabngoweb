@@ -36,16 +36,22 @@ export default function AdminOrders() {
     pendingOrders: 0,
   });
 
-  // Fetch all orders
+  // Fetch all orders (disambiguate embeds with FK hints)
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
-      .select('*, order_items(*, food_items(name))')
-      .order('created_at', { ascending: false });
+      .select(`
+        *,
+        order_items!order_items_order_id_fkey(
+          *,
+          food_items!order_items_item_id_fkey(name)
+        )
+      `)
+      .order('created_at', { ascending: false }); // newest first [web:65]
 
     if (error) {
       setError(error.message);
-      console.error("Error fetching orders:", error);
+      console.error('Error fetching orders:', error);
     } else {
       setOrders(data || []);
     }
@@ -57,12 +63,12 @@ export default function AdminOrders() {
       .from('settings')
       .select('receive_orders')
       .limit(1)
-      .single();
+      .single(); // settings flag [web:65]
 
     if (error) {
       console.error('Error fetching settings:', error);
     } else {
-      setAcceptingOrders(data.receive_orders);
+      setAcceptingOrders(!!data?.receive_orders);
     }
   }, []);
 
@@ -76,28 +82,33 @@ export default function AdminOrders() {
     return () => clearInterval(interval);
   }, [fetchOrders, fetchSettings]);
 
+  // Stats: avoid embed ambiguity, compute totals locally
   useEffect(() => {
     const fetchStats = async () => {
       const { data: ordersToday, error: ordersTodayErr } = await supabase
         .from('orders')
-        .select('id, status, order_items(price, qty)')
+        .select(`
+          id,
+          status,
+          order_items!order_items_order_id_fkey(price, qty)
+        `)
         .gte('created_at', todayStr() + 'T00:00:00')
-        .lte('created_at', todayStr() + 'T23:59:59');
+        .lte('created_at', todayStr() + 'T23:59:59'); // filter by day [web:65]
 
       if (ordersTodayErr) {
         setStats(s => ({ ...s, error: ordersTodayErr.message }));
         return;
       }
 
-      let totalRevenue = 0, avgOrder = 0, pending = 0, count = ordersToday.length || 0;
-      if (ordersToday && ordersToday.length > 0) {
-        for (const order of ordersToday) {
-          const items = order.order_items || [];
-          totalRevenue += items.reduce((sum, item) => sum + (item.price * item.qty), 0);
-          if (order.status === 'Preparing') pending += 1;
-        }
-        avgOrder = count > 0 ? totalRevenue / count : 0;
+      let totalRevenue = 0, pending = 0;
+      const count = ordersToday?.length || 0;
+
+      for (const order of (ordersToday || [])) {
+        const items = order.order_items || [];
+        totalRevenue += items.reduce((sum, it) => sum + Number(it.price) * Number(it.qty), 0);
+        if (order.status === 'Preparing') pending += 1;
       }
+      const avgOrder = count > 0 ? totalRevenue / count : 0;
 
       setStats({
         totalRevenueToday: totalRevenue,
@@ -110,8 +121,8 @@ export default function AdminOrders() {
   }, []);
 
   const handleStatusUpdate = async (orderId, newStatus) => {
-    setOrders(currentOrders =>
-      currentOrders.map(order =>
+    setOrders(current =>
+      current.map(order =>
         order.id === orderId ? { ...order, status: newStatus } : order
       )
     );
@@ -119,7 +130,7 @@ export default function AdminOrders() {
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
-      .eq('id', orderId);
+      .eq('id', orderId); // update status [web:65]
 
     if (error) {
       alert(`Error updating status: ${error.message}`);
@@ -134,7 +145,7 @@ export default function AdminOrders() {
     const { error } = await supabase
       .from('settings')
       .update({ receive_orders: newValue })
-      .neq('receive_orders', newValue);
+      .neq('receive_orders', newValue); // only write when changed [web:65]
 
     if (error) {
       alert('Error updating toggle: ' + error.message);
@@ -208,7 +219,7 @@ export default function AdminOrders() {
               <div style={orderHeaderStyle}>
                 <div>
                   <span style={{ fontWeight: 700 }}>Order ID:</span>
-                  <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{order.id.slice(-8)}</span>
+                  <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{String(order.id).slice(-8)}</span>
                 </div>
                 <div>
                   <span style={{ fontWeight: 700 }}>User:</span>
@@ -229,7 +240,7 @@ export default function AdminOrders() {
               </div>
               <div style={orderFooterStyle}>
                 <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>
-                  Total: {formatPrice((order.order_items || []).reduce((sum, i) => sum + i.price * i.qty, 0))}
+                  Total: {formatPrice((order.order_items || []).reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0))}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontWeight: 600 }}>Status:</span>
