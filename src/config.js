@@ -1,1 +1,1 @@
-export const ADMIN_EMAILS = ["ankitranjan.cs24@bmsce.ac.in","shreyasrathnakara.cs24@bmsce.ac.in","vivekraaj87@gmail.com"];
+export const ADMIN_EMAILS = ["ankitranjan.cs24@bmsce.ac.in","shreyasrathnakara.cs24@bmsce.ac.in","vivekraaj87@gmail.com", "rahulranjan5sept@gmail.com"];
