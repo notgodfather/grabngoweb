@@ -68,7 +68,7 @@ export default function OrderHistory() {
             const total = (o.order_items || []).reduce(
               (sum, r) => sum + Number(r.price || 0) * Number(r.qty || 0),
               0
-            ); // safe totals [web:65]
+            );
 
             return (
               <div key={o.id} style={{ border: '1px solid #eef2f7', borderRadius: 12, padding: 14, background: '#fff' }}>
@@ -122,4 +122,4 @@ const userStatusPillStyle = (status) => ({
   fontSize: 12,
   backgroundColor: status === 'Ready for Pickup' ? '#22c55e' : (status === 'Preparing' ? '#f59e0b' : '#d1d5db'),
   color: status === 'Ready for Pickup' ? '#fff' : '#1f2937',
-}); // [web:65]
+});

@@ -162,7 +162,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     // If a previous order is in-flight (awaiting webhook), block new checkout
     if (inFlightOrderId) {
       alert(`Your previous payment is being finalized (Order ID: ${inFlightOrderId}). Please wait a moment.`);
-      return;
     }
 
     setCheckingOut(true);
@@ -231,11 +230,10 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       setInFlightOrderId(null);
     } catch (err) {
       alert(`Order process failed: ${err.message}`);
-      // Keep inFlightOrderId so user can see status if webhook still comes in
     } finally {
       setCheckingOut(false);
     }
-  }; // [web:30]
+  };
 
   return (
     <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
