@@ -19,7 +19,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
 
-  // Webhook-first: keep the created order id to poll for webhook completion
+  // Webhook-first: keep created order id to poll for webhook completion
   const [inFlightOrderId, setInFlightOrderId] = useState(localStorage.getItem('inflight_order_id') || null);
 
   // local tab for Menu | Categories; 'orders' is handled by router
@@ -30,7 +30,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       const savedCart = localStorage.getItem('cart');
       return savedCart ? JSON.parse(savedCart) : {};
     } catch (e) {
-      console.error("Failed to parse cart from localStorage", e);
+      console.error('Failed to parse cart from localStorage', e);
       return {};
     }
   });
@@ -52,7 +52,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     if (externalActiveTab === 'menu' || externalActiveTab === 'categories') {
       if (externalActiveTab !== activeTab) setActiveTab(externalActiveTab);
     }
-  }, [externalActiveTab]); // Keep UI tab synced with router [web:12]
+  }, [externalActiveTab]); // [web:12]
 
   // Handle localStorage sync for cart and in-flight order id
   useEffect(() => {
@@ -62,7 +62,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     } else {
       localStorage.removeItem('inflight_order_id');
     }
-  }, [cart, inFlightOrderId]); // Persist state to survive refresh during payment [web:12]
+  }, [cart, inFlightOrderId]); // [web:12]
 
   useEffect(() => {
     let isMounted = true;
@@ -74,7 +74,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         supabase.from('categories').select('*').eq('is_available', true).order('display_order', { ascending: true }),
         supabase.from('food_items').select('*').order('name', { ascending: true }),
         supabase.from('settings').select('receive_orders').limit(1).single(),
-      ]); // Read menu data and ordering toggle from Supabase [web:12]
+      ]); // [web:12]
 
       if (!isMounted) return;
 
@@ -89,7 +89,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         return;
       }
       if (settingsRes.error) {
-        console.error("Could not fetch order acceptance setting:", settingsRes.error.message);
+        console.error('Could not fetch order acceptance setting:', settingsRes.error.message);
       } else {
         setAcceptingOrders(settingsRes.data?.receive_orders ?? true);
       }
@@ -102,7 +102,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
     const interval = setInterval(loadData, 300000);
     return () => { isMounted = false; clearInterval(interval); };
-  }, []); // Keep catalog fresh every 5 minutes [web:12]
+  }, []); // [web:12]
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -111,7 +111,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       const matchesSearch = !q || it.name.toLowerCase().includes(q) || (it.description || '').toLowerCase().includes(q);
       return inCategory && matchesSearch;
     });
-  }, [items, search, activeCat]); // Client-side search + category filter [web:12]
+  }, [items, search, activeCat]); // [web:12]
 
   const updateCartQuantity = (item, direction) => {
     setCart((c) => {
@@ -124,20 +124,20 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       }
       return { ...c, [item.id]: { item, qty: newQty } };
     });
-  }; // Simple cart add/remove with local state and localStorage sync [web:12]
+  }; // [web:12]
 
   const cartArray = Object.values(cart);
   const cartTotal = cartArray.reduce((sum, cartItem) => {
     const itemPrice = Number(cartItem.item.price);
     const discountedPrice = Math.max(0, itemPrice - FLAT_ITEM_DISCOUNT);
     return sum + discountedPrice * cartItem.qty;
-  }, 0); // Subtotal using flat per-item discount (matches server) [web:23]
+  }, 0); // [web:23]
 
   // Poll for order existence after checkout; webhook records when SUCCESS
   const pollForOrder = async (orderId, { timeoutMs = 60000, intervalMs = 2000 } = {}) => {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('orders')
         .select('id')
         .eq('id', orderId)
@@ -146,7 +146,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       await new Promise(r => setTimeout(r, intervalMs));
     }
     return false;
-  }; // Client waits for webhook to write order, then clears cart [web:30]
+  }; // [web:30]
 
   const handleCheckout = async (totalAmount) => {
     if (!acceptingOrders) {
@@ -173,7 +173,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         displayName: profile.name || 'Guest',
         email: profile.email || 'noemail@example.com',
         phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
-      }; // User info passed to Cashfree order create [web:23]
+      }; // [web:23]
 
       // 1) Create Cashfree Order (server returns orderId + paymentSessionId)
       const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
@@ -191,7 +191,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
           })),
           user: userDetails,
         }),
-      }); // Backend calls Cashfree /pg/orders and caches pending snapshot [web:23]
+      }); // [web:23]
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
@@ -214,7 +214,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       await cashfree.checkout({
         paymentSessionId: paymentSessionId,
         redirectTarget: '_modal',
-      }); // Hosted checkout modal flow with payment_session_id [web:13]
+      }); // [web:13]
 
       // 3) Poll for webhook-recorded order
       const found = await pollForOrder(orderId, { timeoutMs: 60000, intervalMs: 2000 });
@@ -235,7 +235,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     } finally {
       setCheckingOut(false);
     }
-  }; // Webhook-first: no client finalize call, rely on webhook + polling [web:30]
+  }; // [web:30]
 
   return (
     <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
@@ -457,7 +457,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart, accept
         )}
         {inFlightOrderId && (
           <div style={{ ...noticeChipStyle, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
-            Finalizing #{inFlightOrderId.slice(-8)}
+            Finalizing #{String(inFlightOrderId).slice(-8)}
           </div>
         )}
       </div>
