@@ -121,7 +121,12 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
 // ... (imports and component setup) ...
 
+  // Home.jsx
+
+// ... (rest of the component) ...
+
   const handleCheckout = async (totalAmount) => {
+// ... (initial checks remain the same) ...
     if (!acceptingOrders) {
       alert('Online ordering is temporarily disabled. Please try again later.');
       return;
@@ -142,7 +147,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
       };
 
-      // 1. Create Cashfree Order
+      // 1. Create Cashfree Order and get server-side context
       const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,6 +167,8 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
+      
+      const { orderId, paymentSessionId } = data; // Store IDs for finalization
 
       if (!window.Cashfree) {
         alert('Cashfree SDK not loaded');
@@ -172,60 +179,46 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
       const cashfree = window.Cashfree({ mode });
 
-      // 2. Launch Cashfree Payment Modal
+      // 2. Launch Cashfree Payment Modal (Client handles payment)
       await cashfree.checkout({
-        paymentSessionId: data.paymentSessionId,
+        paymentSessionId: paymentSessionId,
         redirectTarget: '_modal',
       });
 
-      const verifyOrderId = data.orderId;
-
-      // 3. Verify Order Status from Server
-      const verifyResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/verify-order`, {
+      // 3. Finalize Order (Server handles verification + recording)
+      const finalizeResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/finalize-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: verifyOrderId }),
+        body: JSON.stringify({ 
+          orderId,
+          userId: profile.sub,
+          userEmail: profile.email,
+          cart: cartArray,
+        }),
       });
 
-      const verifyData = await verifyResponse.json();
-      if (!verifyResponse.ok) throw new Error(verifyData.error || 'Failed to verify payment');
+      const finalizeData = await finalizeResponse.json();
 
-      if (verifyData.status === 'PAID' || verifyData.status === 'SUCCESS') {
-        // 4. Payment Succeeded: Attempt to Record Order
-        try {
-          const recordResponse = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/record-order`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: profile.sub,
-              userEmail: profile.email,
-              cart: cartArray,
-              orderId: verifyOrderId,
-            }),
-          });
-
-          const recordData = await recordResponse.json();
-          if (!recordResponse.ok) {
-            // Dedicated error for database recording failure after successful payment
-            throw new Error(`Order Recording Failed: ${recordData.error || 'Database error'}. Please contact support with Order ID: ${verifyOrderId}`);
-          }
-
-          // Only proceed to clearing cart on successful database record
-          alert('Payment successful! Your order has been placed.');
-          setCart({});
-          closeCart();
-
-        } catch (recordError) {
-          // Display error, but DO NOT CLEAR THE CART
-          alert(`Payment Succeeded, but Order Recording Failed: ${recordError.message}`);
+      if (!finalizeResponse.ok) {
+        if (finalizeResponse.status === 402) {
+          // Payment failed or pending
+          alert(`Payment failed or pending. Status: ${finalizeData.status || 'UNKNOWN'}.`);
+        } else {
+          // This is the recording failure after a successful payment
+          alert(`Payment Succeeded, but Order Recording Failed: ${finalizeData.details || 'Database error'}. Please contact support with Order ID: ${orderId}`);
+          // Crucially, DO NOT CLEAR THE CART HERE
         }
-
-      } else {
-        alert(`Payment status: ${verifyData.status}. Please check your order.`);
+        return; // Stop processing on failure
       }
+
+      // 4. Success
+      alert('Payment successful! Your order has been placed.');
+      setCart({}); // Clear cart ONLY on final success
+      closeCart();
+
     } catch (err) {
-      // This block handles true payment failures (create-order failed, payment gateway error, verify failed)
-      alert(`Payment failed: ${err.message}`);
+      // This catch handles errors before finalization (e.g., network failure, create-order failure)
+      alert(`Order process failed: ${err.message}`);
     } finally {
       setCheckingOut(false);
     }
