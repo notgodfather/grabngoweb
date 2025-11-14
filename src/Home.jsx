@@ -3,7 +3,10 @@ import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
 
-// --- NEW Component for Retry UI ---
+// 💰 FLAT DISCOUNT CONSTANT (Must match server)
+const FLAT_ITEM_DISCOUNT = 5.00;
+
+// --- Component for Retry UI ---
 function RetryFinalizationPill({ orderId, cartArray, profile, onFinalizeSuccess, onFinalizeFailure }) {
   const [isRetrying, setRetrying] = useState(false);
 
@@ -26,7 +29,6 @@ function RetryFinalizationPill({ orderId, cartArray, profile, onFinalizeSuccess,
       const finalizeData = await finalizeResponse.json();
 
       if (!finalizeResponse.ok) {
-        // If the server confirms payment failed (402), or a server error occurred (500)
         throw new Error(
           finalizeResponse.status === 402
             ? `Payment status is ${finalizeData.status || 'UNKNOWN'}.`
@@ -34,7 +36,6 @@ function RetryFinalizationPill({ orderId, cartArray, profile, onFinalizeSuccess,
         );
       }
 
-      // Success: Order is now recorded (or idempotently confirmed)
       onFinalizeSuccess();
     } catch (err) {
       onFinalizeFailure(err.message);
@@ -63,7 +64,6 @@ function RetryFinalizationPill({ orderId, cartArray, profile, onFinalizeSuccess,
 }
 // ----------------------------------
 
-
 export default function Home({ externalActiveTab = 'menu', onTabChange, setGlobalCartOpen }) {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
 
@@ -77,9 +77,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
   
-  // NEW STATE: To hold an Order ID that was paid but failed to be recorded.
   const [pendingOrderId, setPendingOrderId] = useState(localStorage.getItem('pending_order_id') || null);
-
 
   // local tab for Menu | Categories; 'orders' is handled by router
   const [activeTab, setActiveTab] = useState('menu');
@@ -113,7 +111,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     }
   }, [externalActiveTab]);
 
-  // UPDATE: Also manage the pendingOrderId state in localStorage
+  // Handle localStorage sync for cart and pending order
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
     if (pendingOrderId) {
@@ -125,6 +123,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
   useEffect(() => {
     let isMounted = true;
+// ... (loadData logic remains the same)
     async function loadData() {
       setLoading(true);
       setError('');
@@ -186,7 +185,13 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   };
 
   const cartArray = Object.values(cart);
-  const cartTotal = cartArray.reduce((sum, cartItem) => sum + Number(cartItem.item.price) * cartItem.qty, 0);
+
+// 💰 UPDATED: Calculate the discounted cart total
+  const cartTotal = cartArray.reduce((sum, cartItem) => {
+    const itemPrice = Number(cartItem.item.price);
+    const discountedPrice = Math.max(0, itemPrice - FLAT_ITEM_DISCOUNT);
+    return sum + discountedPrice * cartItem.qty;
+  }, 0);
 
   const handleCheckout = async (totalAmount) => {
     if (!acceptingOrders) {
@@ -236,7 +241,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
 
-      const { orderId, paymentSessionId } = data; // Store IDs for finalization
+      const { orderId, paymentSessionId } = data;
 
       if (!window.Cashfree) {
         alert('Cashfree SDK not loaded');
@@ -279,13 +284,13 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         return; // Stop processing on failure
       }
 
-      // 4. Success (includes idempotent success from server)
+      // 4. Success
       alert('Payment successful! Your order has been placed.');
       setCart({}); // Clear cart ONLY on final success
       closeCart();
 
     } catch (err) {
-      // This catch handles errors before finalization (e.g., network failure, create-order failure)
+      // This catch handles errors before finalization
       alert(`Order process failed: ${err.message}`);
     } finally {
       setCheckingOut(false);
@@ -453,6 +458,11 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
       {items.map((item) => {
         const qty = cart[item.id]?.qty || 0;
         const isAvailable = item.is_available;
+        
+        // 💰 Calculate discounted price for display
+        const originalPrice = Number(item.price);
+        const discountedPrice = Math.max(0, originalPrice - FLAT_ITEM_DISCOUNT);
+        const isDiscounted = originalPrice > discountedPrice;
 
         return (
           <button
@@ -471,7 +481,14 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
               <div style={tileSubStyle}>Tap to view</div>
 
               <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
-                <div style={tilePriceStyle}>{formatPrice(item.price)}</div>
+                {/* 💰 UPDATED Price Display */}
+                <div style={tilePriceWrapStyle}>
+                  {isDiscounted && (
+                    <span style={originalPriceStyle}>{formatPrice(originalPrice)}</span>
+                  )}
+                  <div style={tilePriceStyle}>{formatPrice(discountedPrice)}</div>
+                </div>
+                {/* --------------------------- */}
                 <div style={{ marginLeft: 'auto' }}>
                   {isAvailable && acceptingOrders ? (
                     qty > 0 ? (
@@ -510,7 +527,6 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart, accept
         {!acceptingOrders && (
           <div style={noticeChipStyle}>Ordering paused</div>
         )}
-        
       </div>
 
       <div style={hdrSubStyle}>What are you craving today?</div>
@@ -524,7 +540,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart, accept
         />
         <button onClick={onViewCart} style={cartChipStyle}>
           🛒 <span style={{ marginLeft: 6 }}>Cart</span>
-          <span style={cartCountPillStyle}>{cartCount}</span>
+          <span style={cartCountPillStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</span>
         </button>
       </div>
     </div>
@@ -558,7 +574,7 @@ const cartBadgeStyle = {
   fontWeight: 800,
 };
 
-// NEW Styles for Retry Pill
+// Styles for Retry Pill
 const floatingRetryStyle = {
   position: 'fixed',
   left: 16,
@@ -632,6 +648,21 @@ const tileSubStyle = {
   marginTop: 2,
   minHeight: 20,
   overflow: 'hidden'
+};
+
+// 💰 NEW Styles for discounted price display
+const tilePriceWrapStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+};
+
+const originalPriceStyle = {
+    textDecoration: 'line-through',
+    color: '#94a3b8', /* Slate gray color */
+    fontSize: '0.8rem',
+    fontWeight: 500,
+    marginTop: 2,
 };
 
 const tilePriceStyle = {
