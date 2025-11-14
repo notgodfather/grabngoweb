@@ -185,8 +185,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   };
 
   const cartArray = Object.values(cart);
-
-// 💰 UPDATED: Calculate the discounted cart total
   const cartTotal = cartArray.reduce((sum, cartItem) => {
     const itemPrice = Number(cartItem.item.price);
     const discountedPrice = Math.max(0, itemPrice - FLAT_ITEM_DISCOUNT);
@@ -459,7 +457,6 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
         const qty = cart[item.id]?.qty || 0;
         const isAvailable = item.is_available;
         
-        // 💰 Calculate discounted price for display
         const originalPrice = Number(item.price);
         const discountedPrice = Math.max(0, originalPrice - FLAT_ITEM_DISCOUNT);
         const isDiscounted = originalPrice > discountedPrice;
@@ -540,7 +537,7 @@ function Header({ profile, search, onSearchChange, cartCount, onViewCart, accept
         />
         <button onClick={onViewCart} style={cartChipStyle}>
           🛒 <span style={{ marginLeft: 6 }}>Cart</span>
-          <span style={cartCountPillStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</span>
+          <span style={cartCountPillStyle}>{cartCount}</span>
         </button>
       </div>
     </div>
@@ -650,7 +647,7 @@ const tileSubStyle = {
   overflow: 'hidden'
 };
 
-// 💰 NEW Styles for discounted price display
+// NEW Styles for discounted price display
 const tilePriceWrapStyle = {
     display: 'flex',
     alignItems: 'center',
