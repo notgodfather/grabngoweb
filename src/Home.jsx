@@ -370,6 +370,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
           }}
           onCheckout={handleCheckout}
           isCheckingOut={isCheckingOut}
+          itemDiscount={FLAT_ITEM_DISCOUNT}
         />
       )}
 
@@ -442,7 +443,7 @@ function CategoriesPage({ categories, onPickCategory }) {
           <div style={{ color: '#64748b', fontSize: 12 }}>Tap to view</div>
         </button>
       ))}
-    </div>
+      </div>
   );
 }
 
