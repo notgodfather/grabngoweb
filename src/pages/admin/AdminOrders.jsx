@@ -192,12 +192,10 @@ export default function AdminOrders() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h1 style={{ marginBottom: 24 }}>Admin - Order Management</h1>
-      // near the top UI
 <button onClick={() => audioRef.current?.play()}>
   Enable sound
 </button>
 
-      {/* Accept Online Orders Toggle */}
       <div style={{ marginBottom: 24 }}>
         <label style={{ fontWeight: 600, marginRight: 8 }}>Accept Online Orders:</label>
         <input
