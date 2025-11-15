@@ -43,19 +43,13 @@ export default function App() {
 
         const userData = userInfo.data;
         const email = (userData.email || '').toLowerCase();
-        const allowed =email.endsWith('@bmsce.ac.in') || email==='ankitranjan10may@gmail.com' || email==='shettyshreyas2604@gmail.com' || email==='vivekraaj87@gmail.com' || email.endsWith('@bmsce.org') || email.endsWith('@bmscl.ac.in') || email.endsWith('bmsca.org') || email==='rahulranjan5sept@gmail.com';
-        if (allowed) {
-          setProfile(userData);
-          setError('');
-          localStorage.setItem('isAuthed', 'true');
-          localStorage.setItem('profile', JSON.stringify(userData));
+// Allow ALL emails
+setProfile(userData);
+setError('');
+localStorage.setItem('isAuthed', 'true');
+localStorage.setItem('profile', JSON.stringify(userData));
+navigate(from, { replace: true });
 
-          navigate(from, { replace: true });
-        } else {
-          setError('Please log in with a valid college email.');
-          googleLogout();
-          localStorage.clear();
-        }
       } catch (err) {
         setError('An error occurred during login.');
       }
