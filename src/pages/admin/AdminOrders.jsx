@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatPrice } from '../../types';
+import alarmSound from '../../assets/alarm.mp3';
 
 const ORDER_STATUSES = ['Pending', 'Preparing', 'Ready for Pickup', 'Completed'];
 
@@ -36,6 +37,17 @@ export default function AdminOrders() {
     pendingOrders: 0,
   });
 
+  // Alarm: preload and track latest order id to detect new orders
+  const audioRef = useRef(null);
+  const firstLoadRef = useRef(true);
+  const [lastTopOrderId, setLastTopOrderId] = useState(null);
+
+  useEffect(() => {
+    audioRef.current = new Audio(alarmSound);
+    audioRef.current.volume = 1.0;
+    // Note: browsers may block autoplay; once the admin clicks anywhere, play() will work reliably.
+  }, []);
+
   // Fetch all orders (disambiguate embeds with FK hints)
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
@@ -47,23 +59,41 @@ export default function AdminOrders() {
           food_items!order_items_item_id_fkey(name)
         )
       `)
-      .order('created_at', { ascending: false }); // newest first [web:65]
+      .order('created_at', { ascending: false }); // newest first
 
     if (error) {
       setError(error.message);
       console.error('Error fetching orders:', error);
     } else {
+      const newTopId = data?.[0]?.id || null;
+
+      // Play alarm only when a new order appears after the first load
+      if (!firstLoadRef.current && newTopId && lastTopOrderId && newTopId !== lastTopOrderId) {
+        try {
+          await audioRef.current?.play();
+        } catch (e) {
+          console.warn('Alarm playback blocked until user interacts with the page.');
+        }
+      }
+
+      if (newTopId && newTopId !== lastTopOrderId) {
+        setLastTopOrderId(newTopId);
+      }
+
       setOrders(data || []);
+      if (firstLoadRef.current) {
+        firstLoadRef.current = false; // do not alarm on initial population
+      }
     }
     setLoading(false);
-  }, []);
+  }, [lastTopOrderId]);
 
   const fetchSettings = useCallback(async () => {
     const { data, error } = await supabase
       .from('settings')
       .select('receive_orders')
       .limit(1)
-      .single(); // settings flag [web:65]
+      .single();
 
     if (error) {
       console.error('Error fetching settings:', error);
@@ -78,7 +108,7 @@ export default function AdminOrders() {
     const interval = setInterval(() => {
       fetchOrders();
       fetchSettings();
-    }, 10000);
+    }, 10000); // 10s
     return () => clearInterval(interval);
   }, [fetchOrders, fetchSettings]);
 
@@ -93,7 +123,7 @@ export default function AdminOrders() {
           order_items!order_items_order_id_fkey(price, qty)
         `)
         .gte('created_at', todayStr() + 'T00:00:00')
-        .lte('created_at', todayStr() + 'T23:59:59'); // filter by day [web:65]
+        .lte('created_at', todayStr() + 'T23:59:59');
 
       if (ordersTodayErr) {
         setStats(s => ({ ...s, error: ordersTodayErr.message }));
@@ -130,7 +160,7 @@ export default function AdminOrders() {
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus })
-      .eq('id', orderId); // update status [web:65]
+      .eq('id', orderId);
 
     if (error) {
       alert(`Error updating status: ${error.message}`);
@@ -145,7 +175,7 @@ export default function AdminOrders() {
     const { error } = await supabase
       .from('settings')
       .update({ receive_orders: newValue })
-      .neq('receive_orders', newValue); // only write when changed [web:65]
+      .neq('receive_orders', newValue);
 
     if (error) {
       alert('Error updating toggle: ' + error.message);
