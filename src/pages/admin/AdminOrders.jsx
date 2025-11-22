@@ -37,7 +37,6 @@ export default function AdminOrders() {
     pendingOrders: 0,
   });
 
-  // Alarm: preload and track latest order id to detect new orders
   const audioRef = useRef(null);
   const firstLoadRef = useRef(true);
   const [lastTopOrderId, setLastTopOrderId] = useState(null);
@@ -45,10 +44,8 @@ export default function AdminOrders() {
   useEffect(() => {
     audioRef.current = new Audio(alarmSound);
     audioRef.current.volume = 1.0;
-    // Note: browsers may block autoplay; once the admin clicks anywhere, play() will work reliably.
   }, []);
 
-  // Fetch all orders (disambiguate embeds with FK hints)
   const fetchOrders = useCallback(async () => {
     const { data, error } = await supabase
       .from('orders')
@@ -59,7 +56,7 @@ export default function AdminOrders() {
           food_items!order_items_item_id_fkey(name)
         )
       `)
-      .order('created_at', { ascending: false }); // newest first
+      .order('created_at', { ascending: false }); 
 
     if (error) {
       setError(error.message);
@@ -67,7 +64,6 @@ export default function AdminOrders() {
     } else {
       const newTopId = data?.[0]?.id || null;
 
-      // Play alarm only when a new order appears after the first load
       if (!firstLoadRef.current && newTopId && lastTopOrderId && newTopId !== lastTopOrderId) {
         try {
           await audioRef.current?.play();
@@ -82,7 +78,7 @@ export default function AdminOrders() {
 
       setOrders(data || []);
       if (firstLoadRef.current) {
-        firstLoadRef.current = false; // do not alarm on initial population
+        firstLoadRef.current = false;
       }
     }
     setLoading(false);
@@ -108,11 +104,10 @@ export default function AdminOrders() {
     const interval = setInterval(() => {
       fetchOrders();
       fetchSettings();
-    }, 10000); // 10s
+    }, 10000);
     return () => clearInterval(interval);
   }, [fetchOrders, fetchSettings]);
 
-  // Stats: avoid embed ambiguity, compute totals locally
   useEffect(() => {
     const fetchStats = async () => {
       const { data: ordersToday, error: ordersTodayErr } = await supabase
@@ -213,7 +208,6 @@ export default function AdminOrders() {
         </span>
       </div>
 
-      {/* Stats Cards */}
       <div style={{ display: 'flex', gap: 24, marginBottom: 36 }}>
         <StatCard
           label="Total Revenue Today"
@@ -241,7 +235,6 @@ export default function AdminOrders() {
         />
       </div>
 
-      {/* Orders List */}
       <div style={{ display: 'grid', gap: 20 }}>
         {orders.length === 0 ? (
           <p>No orders found.</p>

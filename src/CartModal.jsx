@@ -12,28 +12,28 @@ export default function CartModal({ cart, onClose, onUpdateQuantity, onCheckout,
     return sum + discountedPrice * ci.qty;
   }, 0);
 
-  // Calculate 5% service charge
-  const serviceCharge = total * 0.05;
+// Calculate 5% service charge
+const serviceCharge = total * 0.05;
 
-  // Final amount including service charge
-  const totalWithService = total + serviceCharge;
+// Final amount including service charge
+const totalWithService = total + serviceCharge;
 
-  const [isVisible, setIsVisible] = useState(false);
+const [isVisible, setIsVisible] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 10);
-    return () => clearTimeout(timer);
-  }, []);
+useEffect(() => {
+const timer = setTimeout(() => {
+setIsVisible(true);
+ }, 10);
+return () => clearTimeout(timer);
+}, []);
 
-  const handleClose = () => {
-    setIsVisible(false);
-    setTimeout(onClose, 300); 
-  };
+const handleClose = () => {
+ setIsVisible(false);
+ setTimeout(onClose, 300); 
+};
 
-  const dynamicContentStyle = {
-    ...modalContentStyle,
+const dynamicContentStyle = {
+ ...modalContentStyle,
     transform: isVisible ? 'translateX(0)' : 'translateX(100%)',
   };
 
