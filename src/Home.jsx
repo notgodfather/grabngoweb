@@ -4,7 +4,7 @@ import { formatPrice } from './types';
 import CartModal from './CartModal';
 
 // 💰 FLAT DISCOUNT CONSTANT (Must match server)
-const FLAT_ITEM_DISCOUNT = 5.00;
+// const FLAT_ITEM_DISCOUNT = 5.00;
 
 export default function Home({ externalActiveTab = 'menu', onTabChange, setGlobalCartOpen }) {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
@@ -121,10 +121,10 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
   const cartArray = Object.values(cart);
   const cartTotal = cartArray.reduce((sum, cartItem) => {
-    const itemPrice = Number(cartItem.item.price);
-    const discountedPrice = Math.max(0, itemPrice - FLAT_ITEM_DISCOUNT);
-    return sum + discountedPrice * cartItem.qty;
-  }, 0);
+  const itemPrice = Number(cartItem.item.price);
+  return sum + itemPrice * cartItem.qty;
+}, 0);
+
 
   // Poll for order existence after checkout; webhook records when SUCCESS
   const pollForOrder = async (orderId, { timeoutMs = 60000, intervalMs = 2000 } = {}) => {
@@ -159,7 +159,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         email: profile.email || 'noemail@example.com',
         phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
       };
-      // 1) Create Cashfree Order (server returns orderId + paymentSessionId)
       const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -366,8 +365,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
           const isAvailable = item.is_available;
 
           const originalPrice = Number(item.price);
-          const discountedPrice = Math.max(0, originalPrice - FLAT_ITEM_DISCOUNT);
-          const isDiscounted = originalPrice > discountedPrice;
+
 
           return (
             <button
@@ -386,9 +384,10 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
                 <div style={tileSubStyle}>Tap to view</div>
 
                 <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
-                  <div style={tilePriceWrapStyle}>
-                    <div style={tilePriceStyle}>{formatPrice(discountedPrice)}</div>
-                  </div>
+                 <div style={tilePriceWrapStyle}>
+  <div style={tilePriceStyle}>{formatPrice(originalPrice)}</div>
+</div>
+
                   <div style={{ marginLeft: 'auto' }}>
                     {isAvailable && acceptingOrders ? (
                       qty > 0 ? (
