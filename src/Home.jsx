@@ -391,9 +391,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
                 <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
                   <div style={tilePriceWrapStyle}>
-                    {isDiscounted && (
-                      <span style={originalPriceStyle}>{formatPrice(originalPrice)}</span>
-                    )}
                     <div style={tilePriceStyle}>{formatPrice(discountedPrice)}</div>
                   </div>
                   <div style={{ marginLeft: 'auto' }}>
