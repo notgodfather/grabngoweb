@@ -291,7 +291,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
             }}
             onCheckout={handleCheckout}
             isCheckingOut={isCheckingOut}
-            itemDiscount={FLAT_ITEM_DISCOUNT}
           />
         )}
 
