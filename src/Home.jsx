@@ -151,10 +151,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       return;
     }
     if (cartArray.length === 0) return;
-    if (inFlightOrderId) {
-      alert(`Your previous payment is being finalized (Order ID: ${inFlightOrderId}). Please wait a moment.`);
-      return;
-    }
     setCheckingOut(true);
     try {
       const userDetails = {
