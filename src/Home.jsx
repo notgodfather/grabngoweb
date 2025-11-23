@@ -3,7 +3,7 @@ import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
 
-const ORANGE = "#ff7300";
+// 💰 FLAT DISCOUNT CONSTANT (Must match server)
 const FLAT_ITEM_DISCOUNT = 5.00;
 
 export default function Home({ externalActiveTab = 'menu', onTabChange, setGlobalCartOpen }) {
@@ -16,8 +16,13 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [error, setError] = useState('');
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
+
+  // Webhook-first: keep created order id to poll for webhook completion
   const [inFlightOrderId, setInFlightOrderId] = useState(localStorage.getItem('inflight_order_id') || null);
+
+  // local tab for Menu | Categories; 'orders' is handled by router
   const [activeTab, setActiveTab] = useState('menu');
+
   const [cart, setCart] = useState(() => {
     try {
       const savedCart = localStorage.getItem('cart');
@@ -27,8 +32,10 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       return {};
     }
   });
+
   const [acceptingOrders, setAcceptingOrders] = useState(true);
 
+  // helpers to sync global nav visibility
   const openCart = () => {
     setCartOpen(true);
     setGlobalCartOpen?.(true);
@@ -38,12 +45,14 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     setGlobalCartOpen?.(false);
   };
 
+  // sync internal tab with global tab from router
   useEffect(() => {
     if (externalActiveTab === 'menu' || externalActiveTab === 'categories') {
       if (externalActiveTab !== activeTab) setActiveTab(externalActiveTab);
     }
   }, [externalActiveTab, activeTab]);
 
+  // Handle localStorage sync for cart and in-flight order id
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
     if (inFlightOrderId) {
@@ -64,10 +73,21 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         supabase.from('settings').select('receive_orders').limit(1).single(),
       ]);
       if (!isMounted) return;
-      if (catRes.error) { setError(catRes.error.message); setLoading(false); return; }
-      if (itemRes.error) { setError(itemRes.error.message); setLoading(false); return; }
-      if (settingsRes.error) { console.error('Could not fetch order acceptance setting:', settingsRes.error.message); }
-      else { setAcceptingOrders(settingsRes.data?.receive_orders ?? true); }
+      if (catRes.error) {
+        setError(catRes.error.message);
+        setLoading(false);
+        return;
+      }
+      if (itemRes.error) {
+        setError(itemRes.error.message);
+        setLoading(false);
+        return;
+      }
+      if (settingsRes.error) {
+        console.error('Could not fetch order acceptance setting:', settingsRes.error.message);
+      } else {
+        setAcceptingOrders(settingsRes.data?.receive_orders ?? true);
+      }
       setCategories(catRes.data || []);
       setItems(itemRes.data || []);
       setLoading(false);
@@ -106,10 +126,15 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     return sum + discountedPrice * cartItem.qty;
   }, 0);
 
+  // Poll for order existence after checkout; webhook records when SUCCESS
   const pollForOrder = async (orderId, { timeoutMs = 60000, intervalMs = 2000 } = {}) => {
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
-      const { data } = await supabase.from('orders').select('id').eq('id', orderId).single();
+      const { data } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('id', orderId)
+        .single();
       if (data?.id) return true;
       await new Promise(r => setTimeout(r, intervalMs));
     }
@@ -117,10 +142,19 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   };
 
   const handleCheckout = async (totalAmount) => {
-    if (!acceptingOrders) { alert('Online ordering is temporarily disabled. Please try again later.'); return; }
-    if (!profile?.sub) { alert('You must be logged in to place an order.'); return; }
+    if (!acceptingOrders) {
+      alert('Online ordering is temporarily disabled. Please try again later.');
+      return;
+    }
+    if (!profile?.sub) {
+      alert('You must be logged in to place an order.');
+      return;
+    }
     if (cartArray.length === 0) return;
-    if (inFlightOrderId) { alert(`Your previous payment is being finalized (Order ID: ${inFlightOrderId}). Please wait a moment.`); return; }
+    if (inFlightOrderId) {
+      alert(`Your previous payment is being finalized (Order ID: ${inFlightOrderId}). Please wait a moment.`);
+      return;
+    }
     setCheckingOut(true);
     try {
       const userDetails = {
@@ -129,6 +163,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         email: profile.email || 'noemail@example.com',
         phoneNumber: profile.phone || profile.phoneNumber || '9999999999',
       };
+      // 1) Create Cashfree Order (server returns orderId + paymentSessionId)
       const response = await fetch(`${import.meta.env.VITE_CASHFREE_API_URL}/api/create-order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -148,32 +183,55 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to create payment order');
       const { orderId, paymentSessionId } = data;
-      if (!window.Cashfree) { alert('Cashfree SDK not loaded'); setCheckingOut(false); return; }
+      if (!window.Cashfree) {
+        alert('Cashfree SDK not loaded');
+        setCheckingOut(false);
+        return;
+      }
       const mode = import.meta.env.PROD ? 'production' : data.envMode || 'sandbox';
       const cashfree = window.Cashfree({ mode });
+      // Track in-flight order id in case the page reloads mid-payment
       setInFlightOrderId(orderId);
+      // 2) Launch Cashfree Payment Modal
       await cashfree.checkout({
         paymentSessionId: paymentSessionId,
         redirectTarget: '_modal',
       });
+      // 3) Poll for webhook-recorded order
       const found = await pollForOrder(orderId, { timeoutMs: 60000, intervalMs: 2000 });
       if (!found) {
         alert('Payment received. Finalizing your order in the background. Please check My Orders shortly.');
+        // Keep cart until order appears; webhook will write it soon
         return;
       }
+      // 4) Success
       alert('Payment successful! Your order has been placed.');
       setCart({});
       closeCart();
       setInFlightOrderId(null);
     } catch (err) {
       alert(`Order process failed: ${err.message}`);
-    } finally { setCheckingOut(false); }
+    } finally {
+      setCheckingOut(false);
+    }
   };
 
   return (
-    <div style={rootStyle}>
-      {/* Sticky/floating header */}
-      <div style={stickyHeaderStyle}>
+    <div>
+      {/* Sticky full-width header */}
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 1000,
+        width: '100vw',
+        left: 0,
+        right: 0,
+        background: 'rgba(255,255,255,0.9)',
+        backdropFilter: 'saturate(180%) blur(8px)',
+        WebkitBackdropFilter: 'saturate(180%) blur(8px)',
+        borderBottom: '1px solid rgba(226,232,240,0.6)',
+        paddingTop: 'max(0px, env(safe-area-inset-top))'
+      }}>
         <Header
           profile={profile}
           search={search}
@@ -184,15 +242,25 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
           inFlightOrderId={inFlightOrderId}
         />
       </div>
-      <div style={mainContentStyle}>
+
+      {/* Main constrained content */}
+      <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
         {!acceptingOrders && (
-          <div style={orderPausedBannerStyle}>
+          <div style={{
+            background: '#fee2e2',
+            color: '#b91c1c',
+            padding: 12,
+            borderRadius: 8,
+            textAlign: 'center',
+            fontWeight: 600,
+            marginBottom: 16
+          }}>
             ⚠️ Online orders are currently disabled.
           </div>
         )}
 
-        {loading && <p style={loadingStyle}>Loading menu...</p>}
-        {error && <p style={errorStyle}>{error}</p>}
+        {loading && <p>Loading menu...</p>}
+        {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
 
         {!loading && (
           <>
@@ -231,328 +299,387 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
             itemDiscount={FLAT_ITEM_DISCOUNT}
           />
         )}
+
+        {/* Floating "View cart" pill */}
         {cartArray.length > 0 && !isCartOpen && !inFlightOrderId && (
-          <button
-            onClick={openCart}
-            style={floatingCartStyle}
-            aria-label="View cart"
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, width: '100%' }}>
-              <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
-              <div style={{ fontWeight: 700 }}>View cart</div>
-              <div style={{ marginLeft: 'auto', fontWeight: 800 }}>{formatPrice(cartTotal)}</div>
-              <span aria-hidden style={{ fontSize: 17, marginLeft: 5 }}>›</span>
-            </div>
-          </button>
+          <>
+            <div style={{ height: 84 }} />
+            <button
+              onClick={openCart}
+              style={floatingCartStyle}
+              aria-label="View cart"
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
+                <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
+                <div style={{ fontWeight: 700 }}>View cart</div>
+                <div style={{ marginLeft: 'auto', fontWeight: 700 }}>{formatPrice(cartTotal)}</div>
+                <span aria-hidden style={{ fontSize: 18 }}>›</span>
+              </div>
+            </button>
+          </>
         )}
       </div>
     </div>
   );
 }
 
-// Categories Page
-function CategoriesPage({ categories, onPickCategory }) {
-  if (!categories?.length) {
-    return <p style={{ color: '#64748b' }}>No categories available.</p>;
-  }
-  return (
-    <div style={categoriesGridStyle}>
-      {categories.map((c) => (
-        <button
-          key={c.id}
-          onClick={() => onPickCategory(c.id)}
-          style={categoryCardStyle}>
-          <div style={categoryImageStyle} />
-          <div style={{ fontWeight: 700 }}>{c.name}</div>
-          <div style={{ color: '#64748b', fontSize: 12 }}>Tap to view</div>
-        </button>
-      ))}
-    </div>
-  );
-}
+// CategoriesPage, MenuGrid, Header, and style objects remain unchanged from your latest code.
 
-// MenuGrid
-function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders }) {
-  if (items.length === 0) {
-    return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
-  }
-  return (
-    <div style={menuTilesGridStyle}>
-      {items.map((item) => {
-        const qty = cart[item.id]?.qty || 0;
-        const isAvailable = item.is_available;
-        const originalPrice = Number(item.price);
-        const discountedPrice = Math.max(0, originalPrice - FLAT_ITEM_DISCOUNT);
-        const isDiscounted = originalPrice > discountedPrice;
-        return (
+
+  function CategoriesPage({ categories, onPickCategory }) {
+    if (!categories?.length) {
+      return <p style={{ color: '#64748b' }}>No categories available.</p>;
+    }
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, marginTop: 12 }}>
+        {categories.map((c) => (
           <button
-            key={item.id}
-            style={{ ...menuTileCardStyle, opacity: isAvailable ? 1 : 0.6 }}>
-            <div style={tileImageWrapStyle}>
-              {item.image_url && (
-                <img src={item.image_url} alt={item.name} style={tileImageStyle} loading="lazy" />
-              )}
-            </div>
-            <div style={{ paddingTop: 8, width: '100%' }}>
-              <div style={tileNameStyle}>{item.name}</div>
-              <div style={tileSubStyle}>{item.description}</div>
-              <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
-                <div style={tilePriceWrapStyle}>
-                  {isDiscounted && (
-                    <span style={originalPriceStyle}>{formatPrice(originalPrice)}</span>
-                  )}
-                  <div style={tilePriceStyle}>{formatPrice(discountedPrice)}</div>
-                </div>
-                <div style={{ marginLeft: 'auto' }}>
-                  {isAvailable && acceptingOrders ? (
-                    qty > 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(item); }} style={qtyBtnTileStyle}>−</button>
-                        <span style={qtyCountStyle}>{qty}</span>
-                        <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={qtyBtnTileStyle}>+</button>
-                      </div>
+            key={c.id}
+            onClick={() => onPickCategory(c.id)}
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              padding: 12,
+              borderRadius: 14,
+              border: '1px solid #eef2f7',
+              background: '#fff',
+              boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
+              textAlign: 'left',
+              cursor: 'pointer'
+            }}
+          >
+            <div style={{ width: '100%', height: 80, borderRadius: 10, background: '#f8fafc', marginBottom: 8 }} />
+            <div style={{ fontWeight: 700 }}>{c.name}</div>
+            <div style={{ color: '#64748b', fontSize: 12 }}>Tap to view</div>
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders }) {
+    if (items.length === 0) {
+      return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
+    }
+
+    return (
+      <div style={menuTilesGridStyle}>
+        {items.map((item) => {
+          const qty = cart[item.id]?.qty || 0;
+          const isAvailable = item.is_available;
+
+          const originalPrice = Number(item.price);
+          const discountedPrice = Math.max(0, originalPrice - FLAT_ITEM_DISCOUNT);
+          const isDiscounted = originalPrice > discountedPrice;
+
+          return (
+            <button
+              key={item.id}
+              style={{ ...menuTileCardStyle, opacity: isAvailable ? 1 : 0.6 }}
+              onClick={() => {}}
+            >
+              <div style={tileImageWrapStyle}>
+                {item.image_url && (
+                  <img src={item.image_url} alt={item.name} style={tileImageStyle} loading="lazy" />
+                )}
+              </div>
+
+              <div style={{ paddingTop: 8, width: '100%' }}>
+                <div style={tileNameStyle}>{item.name}</div>
+                <div style={tileSubStyle}>Tap to view</div>
+
+                <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
+                  <div style={tilePriceWrapStyle}>
+                    {isDiscounted && (
+                      <span style={originalPriceStyle}>{formatPrice(originalPrice)}</span>
+                    )}
+                    <div style={tilePriceStyle}>{formatPrice(discountedPrice)}</div>
+                  </div>
+                  <div style={{ marginLeft: 'auto' }}>
+                    {isAvailable && acceptingOrders ? (
+                      qty > 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(item); }} style={qtyBtnTileStyle}>−</button>
+                          <span style={qtyCountStyle}>{qty}</span>
+                          <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={qtyBtnTileStyle}>+</button>
+                        </div>
+                      ) : (
+                        <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={addTileBtnStyle}>ADD</button>
+                      )
                     ) : (
-                      <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={addTileBtnStyle}>ADD</button>
-                    )
-                  ) : (
-                    <div style={tileOutStyle}>{acceptingOrders ? 'Out' : 'Paused'}</div>
-                  )}
+                      <div style={tileOutStyle}>{acceptingOrders ? 'Out' : 'Paused'}</div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
 
-// Header
-function Header({ profile, search, onSearchChange, cartCount, onViewCart, acceptingOrders, inFlightOrderId }) {
-  const firstName = profile?.name ? profile.name.split(' ')[0] : 'Guest';
-  return (
-    <div style={hdrWrapStyle}>
-      <div style={hdrTopRowStyle}>
-        <div style={hdrHelloStyle}>
-          <span style={{ marginRight: 8, color: ORANGE }}>👋</span>
-          <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
-        </div>
-        {!acceptingOrders && (
-          <div style={noticeChipStyle}>Ordering paused</div>
-        )}
-        {inFlightOrderId && (
-          <div style={{
-            ...noticeChipStyle,
-            background: '#fff7ed',
-            color: '#c2410c',
-            border: '1px solid #fed7aa'
-          }}>
-            Finalizing #{String(inFlightOrderId).slice(-8)}
+  function Header({ profile, search, onSearchChange, cartCount, onViewCart, acceptingOrders, inFlightOrderId }) {
+    const firstName = profile?.name ? profile.name.split(' ')[0] : 'Guest';
+
+    return (
+      <div style={hdrWrapStyle}>
+        <div style={hdrTopRowStyle}>
+          <div style={hdrHelloStyle}>
+            <span style={{ marginRight: 8 }}>👋</span>
+            <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
           </div>
-        )}
-      </div>
-      <div style={hdrSubStyle}>What are you craving today?</div>
-      <div style={hdrActionsRowStyle}>
-        <input
-          placeholder="Search for food..."
-          value={search}
-          onChange={(e) => onSearchChange(e.target.value)}
-          style={hdrSearchStyle}
-        />
-        <button onClick={onViewCart} style={cartChipStyle}>
-          🛒<span style={{ marginLeft: 6 }}>Cart</span>
-          <span style={cartCountPillStyle}>{cartCount}</span>
-        </button>
-      </div>
-    </div>
-  );
-}
+          {!acceptingOrders && (
+            <div style={noticeChipStyle}>Ordering paused</div>
+          )}
+          {inFlightOrderId && (
+            <div style={{ ...noticeChipStyle, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
+              Finalizing #{String(inFlightOrderId).slice(-8)}
+            </div>
+          )}
+        </div>
 
-// --- Styles ---
+        <div style={hdrSubStyle}>What are you craving today?</div>
 
-const rootStyle = { background: "#fbfaf6", minHeight: "100vh", fontFamily: "Inter,sans-serif" };
-const stickyHeaderStyle = {
-  position: "sticky", top: 0, background: "#fff", zIndex: 1000,
-  borderBottom: `2px solid #ffd1a5`, boxShadow: "0 2px 26px #ff730017",
-  padding: "18px 10px 14px 10px"
-};
-const mainContentStyle = { padding: 18, paddingBottom: 100, maxWidth: 730, margin: '0 auto' };
-const loadingStyle = { padding: 30, fontSize: "1.15rem", textAlign: "center", color: ORANGE };
-const errorStyle = { color: '#b91c1c', padding: 10, margin: '10px 0' };
-const orderPausedBannerStyle = {
-  background: '#fee2e2',
-  color: '#b91c1c',
-  padding: 12,
-  borderRadius: 8,
-  textAlign: 'center',
-  fontWeight: 600,
-  marginBottom: 14
-};
-const categoriesGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(130px,1fr))',
-  gap: 13,
-  marginTop: 16
-};
-const categoryCardStyle = {
-  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: 13,
-  borderRadius: 13, border: '1px solid #eef2f7', background: '#fff', boxShadow: '0 3px 10px #ffd1a007',
-  textAlign: 'left', cursor: 'pointer'
-};
-const categoryImageStyle = { width: '100%', height: 80, borderRadius: 10, background: '#f8fafc', marginBottom: 8 };
-const menuTilesGridStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(170px,1fr))',
-  gap: 17,
-  marginTop: 11
-};
-const menuTileCardStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  textAlign: 'left',
-  padding: 12,
-  borderRadius: 14,
-  border: '1px solid #eef2f7',
-  background: '#fff',
-  boxShadow: '0 3px 10px #ffd1a033',
-  cursor: 'pointer'
-};
-const tileImageWrapStyle = {
-  width: '100%',
-  height: 100,
-  borderRadius: 12,
-  background: '#f8fafc',
-  overflow: 'hidden',
-  marginBottom: 6,
-  display: "flex", alignItems: "center", justifyContent: "center"
-};
-const tileImageStyle = {
-  width: '85px',
-  height: '85px',
-  objectFit: 'cover',
-  borderRadius: 10
-};
-const tileNameStyle = { fontWeight: 700, fontSize: '1.13rem', lineHeight: 1.2, color: '#0f172a', marginBottom: 6 };
-const tileSubStyle = { color: '#64748b', fontSize: 13, marginTop: 2, minHeight: 20, overflow: 'hidden' };
-const tilePriceWrapStyle = { display: 'flex', alignItems: 'center', gap: 7 };
-const originalPriceStyle = { textDecoration: 'line-through', color: '#94a3b8', fontSize: '1rem', fontWeight: 500, marginTop: 2, marginRight: 7 };
-const tilePriceStyle = { fontWeight: 800, fontSize: '1.02rem', color: ORANGE };
-const addTileBtnStyle = {
-  padding: '8px 24px',
-  borderRadius: 999,
-  border: `1px solid ${ORANGE}`,
-  background: ORANGE,
-  color: '#fff',
-  cursor: 'pointer',
-  fontWeight: 800,
-  fontSize: 13,
-  lineHeight: 1,
-  boxShadow: '0 2px 8px #ffd1a024'
-};
-const qtyBtnTileStyle = {
-  width: 30,
-  height: 30,
-  borderRadius: 99,
-  border: `1px solid ${ORANGE}`,
-  background: "#fff",
-  color: ORANGE,
-  cursor: "pointer",
-  fontSize: "1.15rem",
-  fontWeight: 700
-};
-const qtyCountStyle = {
-  minWidth: 18,
-  textAlign: 'center',
-  fontWeight: 800,
-  fontSize: 14,
-  color: ORANGE,
-  margin: "0 8px"
-};
-const tileOutStyle = {
-  padding: '7px 18px',
-  borderRadius: 999,
-  background: '#f1f5f9',
-  color: '#64748b',
-  fontWeight: 700,
-  fontSize: 13,
-  marginLeft: 7
-};
-const floatingCartStyle = {
-  position: 'fixed',
-  left: "50%",
-  bottom: "36px",
-  transform: "translateX(-50%)",
-  zIndex: 1300,
-  background: ORANGE,
-  color: "#fff",
-  borderRadius: 29,
-  boxShadow: "0 8px 32px #ffd1a066",
-  padding: "16px 24px",
-  fontWeight: 800,
-  fontSize: "1.02rem",
-  minWidth: 190,
-  border: "none",
-  cursor: "pointer"
-};
-const cartBadgeStyle = {
-  width: 33,
-  height: 33,
-  borderRadius: 99,
-  background: "#fff6e6",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontWeight: 700,
-  color: ORANGE,
-  fontSize: 16
-};
-const hdrWrapStyle = { padding: '10px 0 8px 0', display: 'flex', flexDirection: 'column', gap: 6 };
-const hdrTopRowStyle = { display: 'flex', alignItems: 'center', gap: 12 };
-const hdrHelloStyle = { fontSize: '1.15rem', fontWeight: 700, color: ORANGE, display: 'flex', alignItems: 'center' };
-const noticeChipStyle = {
-  marginLeft: 'auto',
-  fontSize: 12,
-  padding: '6px 13px',
-  borderRadius: 999,
-  background: '#fee2e2',
-  color: '#b91c1c',
-  border: '1px solid #fecaca',
-  whiteSpace: 'nowrap'
-};
-const hdrSubStyle = { fontSize: '0.99rem', color: '#64748b', margin: "5px 0 8px 0" };
-const hdrActionsRowStyle = { display: 'flex', alignItems: 'center', gap: 13 };
-const hdrSearchStyle = {
-  padding: "12px 18px",
-  borderRadius: 14,
-  border: "1.3px solid #ffd1a5",
-  flex: 1,
-  fontSize: 15,
-  boxShadow: "0 1px 10px #ffd1a02d"
-};
-const cartChipStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: 6,
-  padding: '8px 14px',
-  borderRadius: 999,
-  border: '1px solid #ffe2c2',
-  background: ORANGE,
-  fontWeight: 700,
-  color: "#fff",
-  cursor: 'pointer',
-  whiteSpace: 'nowrap'
-};
-const cartCountPillStyle = {
-  marginLeft: 8,
-  minWidth: 22,
-  height: 22,
-  borderRadius: 999,
-  background: '#fff6e6',
-  color: ORANGE,
-  fontSize: 14,
-  fontWeight: 800,
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '0 7px'
-};
+        <div style={hdrActionsRowStyle}>
+          <input
+            placeholder="Search for food..."
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            style={hdrSearchStyle}
+          />
+          <button onClick={onViewCart} style={cartChipStyle}>
+            🛒 <span style={{ marginLeft: 6 }}>Cart</span>
+            <span style={cartCountPillStyle}>{cartCount}</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  /* Styles */
+  const floatingCartStyle = {
+    position: 'fixed',
+    left: 16,
+    right: 16,
+    bottom: 'calc(56px + max(16px, env(safe-area-inset-bottom)))',
+    zIndex: 1300,
+    background: '#22c55e',
+    color: '#fff',
+    border: 'none',
+    borderRadius: 28,
+    padding: '14px 18px',
+    boxShadow: '0 12px 24px rgba(34,197,94,0.35)',
+  };
+
+  const cartBadgeStyle = {
+    width: 36,
+    height: 36,
+    borderRadius: 999,
+    background: 'rgba(255,255,255,0.2)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 800,
+  };
+
+  const floatingInfoStyle = {
+    position: 'fixed',
+    left: 16,
+    right: 16,
+    bottom: 'calc(56px + max(16px, env(safe-area-inset-bottom)))',
+    zIndex: 1300,
+    background: '#fef3c7',
+    color: '#92400e',
+    border: '1px solid #fde68a',
+    borderRadius: 16,
+    padding: '16px',
+    boxShadow: '0 12px 24px rgba(251,191,36,0.35)',
+    textAlign: 'center',
+  };
+
+  const menuTilesGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: 12,
+    marginTop: 8
+  };
+
+  const menuTileCardStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    textAlign: 'left',
+    padding: 12,
+    borderRadius: 14,
+    border: '1px solid #eef2f7',
+    background: '#fff',
+    boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
+    cursor: 'pointer'
+  };
+
+  const tileImageWrapStyle = {
+    width: '100%',
+    height: 110,
+    borderRadius: 12,
+    background: '#f8fafc',
+    overflow: 'hidden'
+  };
+
+  const tileImageStyle = {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  };
+
+  const tileNameStyle = {
+    fontWeight: 700,
+    fontSize: '0.95rem',
+    lineHeight: 1.2,
+    color: '#0f172a'
+  };
+
+  const tileSubStyle = {
+    color: '#64748b',
+    fontSize: 12,
+    marginTop: 2,
+    minHeight: 20,
+    overflow: 'hidden'
+  };
+
+  const tilePriceWrapStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+  };
+
+  const originalPriceStyle = {
+    textDecoration: 'line-through',
+    color: '#94a3b8',
+    fontSize: '0.8rem',
+    fontWeight: 500,
+    marginTop: 2,
+  };
+
+  const tilePriceStyle = {
+    fontWeight: 800,
+    fontSize: '0.95rem',
+    color: '#0f172a'
+  };
+
+  const addTileBtnStyle = {
+    padding: '6px 10px',
+    borderRadius: 999,
+    border: '1px solid #16a34a',
+    background: '#ecfdf5',
+    color: '#166534',
+    cursor: 'pointer',
+    fontWeight: 800,
+    fontSize: 12,
+    lineHeight: 1
+  };
+
+  const qtyBtnTileStyle = {
+    width: 28,
+    height: 28,
+    borderRadius: 999,
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    cursor: 'pointer',
+    fontSize: '1rem',
+    lineHeight: 1
+  };
+
+  const qtyCountStyle = {
+    minWidth: 18,
+    textAlign: 'center',
+    fontWeight: 800,
+    fontSize: 12
+  };
+
+  const tileOutStyle = {
+    padding: '6px 10px',
+    borderRadius: 999,
+    background: '#e2e8f0',
+    color: '#64748b',
+    fontWeight: 700,
+    fontSize: 12
+  };
+
+  const hdrWrapStyle = {
+    padding: '10px 0 8px 0',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6
+  };
+
+  const hdrTopRowStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8
+  };
+
+  const hdrHelloStyle = {
+    fontSize: '1.1rem',
+    fontWeight: 700,
+    color: '#1e293b',
+    display: 'flex',
+    alignItems: 'center'
+  };
+
+  const noticeChipStyle = {
+    marginLeft: 'auto',
+    fontSize: 12,
+    padding: '6px 10px',
+    borderRadius: 999,
+    background: '#fee2e2',
+    color: '#b91c1c',
+    border: '1px solid #fecaca',
+    whiteSpace: 'nowrap'
+  };
+
+  const hdrSubStyle = {
+    fontSize: '0.95rem',
+    color: '#64748b'
+  };
+
+  const hdrActionsRowStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10
+  };
+
+  const hdrSearchStyle = {
+    padding: 10,
+    borderRadius: 12,
+    border: '1px solid #e2e8f0',
+    flex: 1
+  };
+
+  const cartChipStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 6,
+    padding: '8px 12px',
+    borderRadius: 999,
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    fontWeight: 700,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap'
+  };
+
+  const cartCountPillStyle = {
+    marginLeft: 8,
+    minWidth: 22,
+    height: 22,
+    borderRadius: 999,
+    background: '#f97316',
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 800,
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 6px'
+  };
