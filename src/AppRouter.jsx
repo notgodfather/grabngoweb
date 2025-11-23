@@ -16,12 +16,9 @@ export default function AppRouter() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // global tab state: 'menu' | 'categories' | 'orders'
   const [activeTab, setActiveTab] = React.useState('menu');
-  // global signal for cart modal
   const [isCartOpenFromHome, setIsCartOpenFromHome] = React.useState(false);
 
-  // keep tab in sync with route when landing directly on /orders
   React.useEffect(() => {
     if (location.pathname.startsWith('/orders')) {
       setActiveTab('orders');
