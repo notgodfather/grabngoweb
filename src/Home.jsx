@@ -1,9 +1,433 @@
 import React, { useEffect, useMemo, useState } from 'react';
+// Assuming supabase is available via this import
 import { supabase } from './lib/supabase';
+// Assuming formatPrice is available via this import
 import { formatPrice } from './types';
+// Assuming CartModal is available via this import
 import CartModal from './CartModal';
 
 
+// --- Style Definitions (New & Updated for better UI/UX) ---
+
+const COLORS = {
+  primary: '#34d399', // A vibrant green for action (Emerald)
+  primaryDark: '#059669', // Darker green for hover/contrast
+  secondary: '#1d4ed8', // Blue for secondary info
+  background: '#f8fafc', // Very light gray background for depth
+  cardBackground: '#ffffff',
+  text: '#1f2937', // Darker text (Slate 800)
+  subText: '#6b7280', // Medium gray for secondary text (Gray 500)
+  border: '#e5e7eb', // Light border (Gray 200)
+  danger: '#ef4444', // Red for errors/notices
+};
+
+// Global content container style
+const mainContentStyle = {
+  padding: '24px',
+  paddingBottom: '120px', 
+  maxWidth: 1200,
+  margin: '0 auto',
+  backgroundColor: COLORS.background, 
+};
+
+// --- Header Styles ---
+const hdrWrapStyle = {
+  padding: '12px 24px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 8,
+};
+
+const hdrTopRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+};
+
+const hdrHelloStyle = {
+  fontSize: '1.25rem', 
+  fontWeight: 700,
+  color: COLORS.text,
+  display: 'flex',
+  alignItems: 'center',
+};
+
+const noticeChipStyle = {
+  fontSize: 12,
+  padding: '6px 12px',
+  borderRadius: 999,
+  background: COLORS.danger + '15', 
+  color: COLORS.danger,
+  border: `1px solid ${COLORS.danger}50`,
+  fontWeight: 700,
+  whiteSpace: 'nowrap',
+  transition: 'all 0.3s ease',
+  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+};
+
+const hdrSubStyle = {
+  fontSize: '0.95rem',
+  color: COLORS.subText,
+  marginBottom: 8,
+};
+
+const hdrActionsRowStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 12,
+};
+
+const hdrSearchStyle = {
+  padding: '10px 14px',
+  borderRadius: 12,
+  border: `1px solid ${COLORS.border}`,
+  flex: 1,
+  fontSize: '1rem',
+  transition: 'border-color 0.2s',
+  // Note: Hover/Focus effects often require external CSS or styled-components in a real app, 
+  // but we set the base style here.
+};
+
+const cartChipStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  padding: '10px 14px',
+  borderRadius: 12,
+  border: 'none', 
+  background: COLORS.primary,
+  color: COLORS.cardBackground,
+  fontWeight: 700,
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  transition: 'all 0.2s ease',
+  boxShadow: '0 4px 6px rgba(52, 211, 153, 0.2)', 
+};
+
+const cartCountPillStyle = {
+  marginLeft: 4,
+  minWidth: 20,
+  height: 20,
+  borderRadius: 999,
+  background: COLORS.cardBackground,
+  color: COLORS.primaryDark,
+  fontSize: 12,
+  fontWeight: 800,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: '0 4px',
+};
+
+// --- Menu Grid Styles ---
+const menuTilesGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
+  gap: 16,
+  marginTop: 16,
+};
+
+const menuTileCardStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  textAlign: 'left',
+  padding: 12,
+  borderRadius: 16, 
+  border: `1px solid ${COLORS.border}`,
+  background: COLORS.cardBackground,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)', 
+  cursor: 'pointer',
+  transition: 'transform 0.2s, box-shadow 0.2s',
+};
+
+const tileImageWrapStyle = {
+  width: '100%',
+  height: 120,
+  borderRadius: 12,
+  background: COLORS.background,
+  overflow: 'hidden',
+};
+
+const tileImageStyle = {
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+};
+
+const tileNameStyle = {
+  fontWeight: 800,
+  fontSize: '1rem', 
+  lineHeight: 1.3,
+  color: COLORS.text,
+  marginTop: 8,
+};
+
+const tileSubStyle = {
+  color: COLORS.subText,
+  fontSize: 12,
+  marginTop: 2,
+  minHeight: 20,
+  overflow: 'hidden',
+};
+
+const addTileBtnStyle = {
+  padding: '8px 14px',
+  borderRadius: 999,
+  border: 'none',
+  background: COLORS.primary,
+  color: COLORS.cardBackground,
+  cursor: 'pointer',
+  fontWeight: 800,
+  fontSize: 12,
+  lineHeight: 1,
+  transition: 'background 0.2s',
+};
+
+const qtyBtnTileStyle = {
+  width: 32,
+  height: 32,
+  borderRadius: 999,
+  border: `1px solid ${COLORS.border}`,
+  background: COLORS.cardBackground,
+  color: COLORS.text,
+  cursor: 'pointer',
+  fontSize: '1.1rem',
+  lineHeight: 1,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'border-color 0.2s',
+};
+
+const qtyCountStyle = {
+  minWidth: 20,
+  textAlign: 'center',
+  fontWeight: 800,
+  fontSize: 14,
+  color: COLORS.text,
+};
+
+const tileOutStyle = {
+  padding: '6px 12px',
+  borderRadius: 999,
+  background: COLORS.border,
+  color: COLORS.subText,
+  fontWeight: 700,
+  fontSize: 12,
+};
+
+// --- Categories Page Styles ---
+const categoriesGridStyle = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
+  gap: 16, 
+  marginTop: 16,
+};
+
+const categoryCardStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  padding: 12,
+  borderRadius: 16,
+  border: `1px solid ${COLORS.border}`,
+  background: COLORS.cardBackground,
+  boxShadow: '0 3px 8px rgba(0,0,0,0.05)',
+  textAlign: 'center',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease',
+};
+
+const categoryImagePlaceholderStyle = {
+  width: '100%',
+  height: 80,
+  borderRadius: 10,
+  background: COLORS.background, 
+  marginBottom: 8,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: '1.5rem',
+  color: COLORS.subText,
+  fontWeight: 700,
+};
+
+// --- Floating Cart Pill Style ---
+const floatingCartStyle = {
+  position: 'fixed',
+  left: 24,
+  right: 24,
+  bottom: 'calc(24px + max(0px, env(safe-area-inset-bottom)))', 
+  zIndex: 1300,
+  background: COLORS.primaryDark, 
+  color: COLORS.cardBackground,
+  border: 'none',
+  borderRadius: 32, 
+  padding: '16px 20px',
+  boxShadow: '0 10px 20px rgba(52, 211, 153, 0.4)', 
+  transition: 'all 0.3s ease',
+};
+
+const cartBadgeStyle = {
+  width: 32,
+  height: 32,
+  borderRadius: 999,
+  background: 'rgba(255,255,255,0.25)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 800,
+  fontSize: 14,
+};
+
+// --- Helper Components (Updated) ---
+
+function CategoriesPage({ categories, onPickCategory }) {
+  if (!categories?.length) {
+    return <p style={{ color: COLORS.subText, padding: 12 }}>No categories available.</p>;
+  }
+  return (
+    <div style={categoriesGridStyle}>
+      {categories.map((c) => (
+        <button
+          key={c.id}
+          onClick={() => onPickCategory(c.id)}
+          style={categoryCardStyle}
+        >
+          <div style={categoryImagePlaceholderStyle}>
+            {c.image_url ? 
+              <img src={c.image_url} alt={c.name} style={tileImageStyle} loading="lazy" />
+              : c.name.charAt(0)}
+          </div>
+          <div style={{ fontWeight: 800, color: COLORS.text }}>{c.name}</div>
+          <div style={{ color: COLORS.subText, fontSize: 12, marginTop: 4 }}>View Menu</div>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders }) {
+  if (items.length === 0) {
+    return <p style={{ color: COLORS.subText, padding: 12 }}>No items found. Try a different search or category.</p>;
+  }
+
+  return (
+    <div style={menuTilesGridStyle}>
+      {items.map((item) => {
+        const qty = cart[item.id]?.qty || 0;
+        const isAvailable = item.is_available;
+        const originalPrice = Number(item.price);
+
+        return (
+          <div
+            key={item.id}
+            style={{ ...menuTileCardStyle, opacity: isAvailable ? 1 : 0.6 }}
+          >
+            <div style={tileImageWrapStyle}>
+              {item.image_url ? (
+                <img src={item.image_url} alt={item.name} style={tileImageStyle} loading="lazy" />
+              ) : (
+                <div style={{ ...tileImageStyle, background: COLORS.background, display: 'flex', alignItems: 'center', justifyContent: 'center', color: COLORS.subText }}>
+                  <span role="img" aria-label="dish">🍽️</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ paddingTop: 8, width: '100%' }}>
+              <div style={tileNameStyle}>{item.name}</div>
+              <div style={tileSubStyle}>{item.description || 'Tap for details'}</div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+                <div style={{ fontWeight: 800, fontSize: '1.1rem', color: COLORS.primaryDark }}>
+                  {formatPrice(originalPrice)}
+                </div>
+
+                <div>
+                  {isAvailable && acceptingOrders ? (
+                    qty > 0 ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onRemoveFromCart(item); }}
+                          style={qtyBtnTileStyle}
+                          aria-label={`Remove one ${item.name}`}
+                        >
+                          −
+                        </button>
+                        <span style={qtyCountStyle}>{qty}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onAddToCart(item); }}
+                          style={qtyBtnTileStyle}
+                          aria-label={`Add one ${item.name}`}
+                        >
+                          +
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onAddToCart(item); }}
+                        style={addTileBtnStyle}
+                      >
+                        ADD
+                      </button>
+                    )
+                  ) : (
+                    <div style={tileOutStyle}>{acceptingOrders ? 'Out' : 'Paused'}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function Header({ profile, search, onSearchChange, cartCount, onViewCart, acceptingOrders, inFlightOrderId }) {
+  const firstName = profile?.name ? profile.name.split(' ')[0] : 'Guest';
+
+  return (
+    <div style={hdrWrapStyle}>
+      <div style={hdrTopRowStyle}>
+        <div style={hdrHelloStyle}>
+          <span style={{ marginRight: 8 }}>👋</span>
+          <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {inFlightOrderId && (
+            <div style={{ ...noticeChipStyle, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
+              Finalizing #{String(inFlightOrderId).slice(-8)}
+            </div>
+          )}
+          {!acceptingOrders && (
+            <div style={noticeChipStyle}>Ordering Paused</div>
+          )}
+        </div>
+      </div>
+
+      <div style={hdrSubStyle}>What are you craving today?</div>
+
+      <div style={hdrActionsRowStyle}>
+        <input
+          placeholder="Search for food..."
+          value={search}
+          onChange={(e) => onSearchChange(e.target.value)}
+          style={hdrSearchStyle}
+          aria-label="Search food items"
+        />
+        <button onClick={onViewCart} style={cartChipStyle} aria-label={`View cart with ${cartCount} items`}>
+          <span role="img" aria-label="shopping cart">🛒</span>
+          <span style={{ marginLeft: 2 }}>Cart</span>
+          <span style={cartCountPillStyle}>{cartCount}</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+
+// --- Main Component ---
 
 export default function Home({ externalActiveTab = 'menu', onTabChange, setGlobalCartOpen }) {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
@@ -15,7 +439,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [error, setError] = useState('');
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
-
 
   const [inFlightOrderId, setInFlightOrderId] = useState(localStorage.getItem('inflight_order_id') || null);
 
@@ -116,9 +539,9 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
   const cartArray = Object.values(cart);
   const cartTotal = cartArray.reduce((sum, cartItem) => {
-  const itemPrice = Number(cartItem.item.price);
-  return sum + itemPrice * cartItem.qty;
-}, 0);
+    const itemPrice = Number(cartItem.item.price);
+    return sum + itemPrice * cartItem.qty;
+  }, 0);
 
 
   // Poll for order existence after checkout; webhook records when SUCCESS
@@ -207,7 +630,7 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   };
 
   return (
-    <div>
+    <div style={{ background: COLORS.background, minHeight: '100vh' }}>
       {/* Sticky full-width header */}
       <div style={{
         position: 'sticky',
@@ -217,9 +640,9 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
         left: 0,
         right: 0,
         background: 'rgba(255,255,255,0.9)',
-        backdropFilter: 'saturate(180%) blur(8px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(8px)',
-        borderBottom: '1px solid rgba(226,232,240,0.6)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        borderBottom: `1px solid ${COLORS.border}`,
         paddingTop: 'max(0px, env(safe-area-inset-top))'
       }}>
         <Header
@@ -234,23 +657,24 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
       </div>
 
       {/* Main constrained content */}
-      <div style={{ padding: 24, paddingBottom: 120, maxWidth: 1200, margin: '0 auto' }}>
+      <div style={mainContentStyle}>
         {!acceptingOrders && (
           <div style={{
-            background: '#fee2e2',
-            color: '#b91c1c',
-            padding: 12,
-            borderRadius: 8,
+            background: COLORS.danger + '10',
+            color: COLORS.danger,
+            padding: 14,
+            borderRadius: 12,
             textAlign: 'center',
             fontWeight: 600,
-            marginBottom: 16
+            marginBottom: 20,
+            border: `1px solid ${COLORS.danger}50`,
           }}>
             ⚠️ Online orders are currently disabled.
           </div>
         )}
 
-        {loading && <p>Loading menu...</p>}
-        {error && <p style={{ color: '#b91c1c' }}>{error}</p>}
+        {loading && <p style={{ color: COLORS.subText }}>Loading menu...</p>}
+        {error && <p style={{ color: COLORS.danger }}>{error}</p>}
 
         {!loading && (
           <>
@@ -291,381 +715,20 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
         {/* Floating "View cart" pill */}
         {cartArray.length > 0 && !isCartOpen && !inFlightOrderId && (
-          <>
-            <div style={{ height: 84 }} />
-            <button
-              onClick={openCart}
-              style={floatingCartStyle}
-              aria-label="View cart"
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%' }}>
-                <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
-                <div style={{ fontWeight: 700 }}>View cart</div>
-                <div style={{ marginLeft: 'auto', fontWeight: 700 }}>{formatPrice(cartTotal)}</div>
-                <span aria-hidden style={{ fontSize: 18 }}>›</span>
-              </div>
-            </button>
-          </>
+          <button
+            onClick={openCart}
+            style={floatingCartStyle}
+            aria-label={`View cart with total ${formatPrice(cartTotal)}`}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16, width: '100%' }}>
+              <div style={cartBadgeStyle}>{cartArray.reduce((n, ci) => n + ci.qty, 0)}</div>
+              <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>View Cart</div>
+              <div style={{ marginLeft: 'auto', fontWeight: 800, fontSize: '1.1rem' }}>{formatPrice(cartTotal)}</div>
+              <span aria-hidden style={{ fontSize: 20 }}>→</span>
+            </div>
+          </button>
         )}
       </div>
     </div>
   );
 }
-
-// CategoriesPage, MenuGrid, Header, and style objects remain unchanged from your latest code.
-
-
-  function CategoriesPage({ categories, onPickCategory }) {
-    if (!categories?.length) {
-      return <p style={{ color: '#64748b' }}>No categories available.</p>;
-    }
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 12, marginTop: 12 }}>
-        {categories.map((c) => (
-          <button
-            key={c.id}
-            onClick={() => onPickCategory(c.id)}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-start',
-              padding: 12,
-              borderRadius: 14,
-              border: '1px solid #eef2f7',
-              background: '#fff',
-              boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
-              textAlign: 'left',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{ width: '100%', height: 80, borderRadius: 10, background: '#f8fafc', marginBottom: 8 }} />
-            <div style={{ fontWeight: 700 }}>{c.name}</div>
-            <div style={{ color: '#64748b', fontSize: 12 }}>Tap to view</div>
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders }) {
-    if (items.length === 0) {
-      return <p style={{ color: '#64748b' }}>No items found. Try a different search or category.</p>;
-    }
-
-    return (
-      <div style={menuTilesGridStyle}>
-        {items.map((item) => {
-          const qty = cart[item.id]?.qty || 0;
-          const isAvailable = item.is_available;
-
-          const originalPrice = Number(item.price);
-
-
-          return (
-            <button
-              key={item.id}
-              style={{ ...menuTileCardStyle, opacity: isAvailable ? 1 : 0.6 }}
-              onClick={() => {}}
-            >
-              <div style={tileImageWrapStyle}>
-                {item.image_url && (
-                  <img src={item.image_url} alt={item.name} style={tileImageStyle} loading="lazy" />
-                )}
-              </div>
-
-              <div style={{ paddingTop: 8, width: '100%' }}>
-                <div style={tileNameStyle}>{item.name}</div>
-                <div style={tileSubStyle}>Tap to view</div>
-
-                <div style={{ display: 'flex', alignItems: 'center', marginTop: 8 }}>
-                 <div style={tilePriceWrapStyle}>
-  <div style={tilePriceStyle}>{formatPrice(originalPrice)}</div>
-</div>
-
-                  <div style={{ marginLeft: 'auto' }}>
-                    {isAvailable && acceptingOrders ? (
-                      qty > 0 ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <button onClick={(e) => { e.stopPropagation(); onRemoveFromCart(item); }} style={qtyBtnTileStyle}>−</button>
-                          <span style={qtyCountStyle}>{qty}</span>
-                          <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={qtyBtnTileStyle}>+</button>
-                        </div>
-                      ) : (
-                        <button onClick={(e) => { e.stopPropagation(); onAddToCart(item); }} style={addTileBtnStyle}>ADD</button>
-                      )
-                    ) : (
-                      <div style={tileOutStyle}>{acceptingOrders ? 'Out' : 'Paused'}</div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
-  function Header({ profile, search, onSearchChange, cartCount, onViewCart, acceptingOrders, inFlightOrderId }) {
-    const firstName = profile?.name ? profile.name.split(' ')[0] : 'Guest';
-
-    return (
-      <div style={hdrWrapStyle}>
-        <div style={hdrTopRowStyle}>
-          <div style={hdrHelloStyle}>
-            <span style={{ marginRight: 8 }}>👋</span>
-            <span style={{ fontWeight: 800 }}>Hi, {firstName}</span>
-          </div>
-          {!acceptingOrders && (
-            <div style={noticeChipStyle}>Ordering paused</div>
-          )}
-          {inFlightOrderId && (
-            <div style={{ ...noticeChipStyle, background: '#fff7ed', color: '#c2410c', border: '1px solid #fed7aa' }}>
-              Finalizing #{String(inFlightOrderId).slice(-8)}
-            </div>
-          )}
-        </div>
-
-        <div style={hdrSubStyle}>What are you craving today?</div>
-
-        <div style={hdrActionsRowStyle}>
-          <input
-            placeholder="Search for food..."
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            style={hdrSearchStyle}
-          />
-          <button onClick={onViewCart} style={cartChipStyle}>
-            🛒 <span style={{ marginLeft: 6 }}>Cart</span>
-            <span style={cartCountPillStyle}>{cartCount}</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  /* Styles */
-  const floatingCartStyle = {
-    position: 'fixed',
-    left: 16,
-    right: 16,
-    bottom: 'calc(56px + max(16px, env(safe-area-inset-bottom)))',
-    zIndex: 1300,
-    background: '#22c55e',
-    color: '#fff',
-    border: 'none',
-    borderRadius: 28,
-    padding: '14px 18px',
-    boxShadow: '0 12px 24px rgba(34,197,94,0.35)',
-  };
-
-  const cartBadgeStyle = {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
-    background: 'rgba(255,255,255,0.2)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 800,
-  };
-
-  const floatingInfoStyle = {
-    position: 'fixed',
-    left: 16,
-    right: 16,
-    bottom: 'calc(56px + max(16px, env(safe-area-inset-bottom)))',
-    zIndex: 1300,
-    background: '#fef3c7',
-    color: '#92400e',
-    border: '1px solid #fde68a',
-    borderRadius: 16,
-    padding: '16px',
-    boxShadow: '0 12px 24px rgba(251,191,36,0.35)',
-    textAlign: 'center',
-  };
-
-  const menuTilesGridStyle = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(2, 1fr)',
-    gap: 12,
-    marginTop: 8
-  };
-
-  const menuTileCardStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    textAlign: 'left',
-    padding: 12,
-    borderRadius: 14,
-    border: '1px solid #eef2f7',
-    background: '#fff',
-    boxShadow: '0 3px 10px rgba(0,0,0,0.04)',
-    cursor: 'pointer'
-  };
-
-  const tileImageWrapStyle = {
-    width: '100%',
-    height: 110,
-    borderRadius: 12,
-    background: '#f8fafc',
-    overflow: 'hidden'
-  };
-
-  const tileImageStyle = {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover'
-  };
-
-  const tileNameStyle = {
-    fontWeight: 700,
-    fontSize: '0.95rem',
-    lineHeight: 1.2,
-    color: '#0f172a'
-  };
-
-  const tileSubStyle = {
-    color: '#64748b',
-    fontSize: 12,
-    marginTop: 2,
-    minHeight: 20,
-    overflow: 'hidden'
-  };
-
-  const tilePriceWrapStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-  };
-
-  const originalPriceStyle = {
-    textDecoration: 'line-through',
-    color: '#94a3b8',
-    fontSize: '0.8rem',
-    fontWeight: 500,
-    marginTop: 2,
-  };
-
-  const tilePriceStyle = {
-    fontWeight: 800,
-    fontSize: '0.95rem',
-    color: '#0f172a'
-  };
-
-  const addTileBtnStyle = {
-    padding: '6px 10px',
-    borderRadius: 999,
-    border: '1px solid #16a34a',
-    background: '#ecfdf5',
-    color: '#166534',
-    cursor: 'pointer',
-    fontWeight: 800,
-    fontSize: 12,
-    lineHeight: 1
-  };
-
-  const qtyBtnTileStyle = {
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    border: '1px solid #e2e8f0',
-    background: '#fff',
-    cursor: 'pointer',
-    fontSize: '1rem',
-    lineHeight: 1
-  };
-
-  const qtyCountStyle = {
-    minWidth: 18,
-    textAlign: 'center',
-    fontWeight: 800,
-    fontSize: 12
-  };
-
-  const tileOutStyle = {
-    padding: '6px 10px',
-    borderRadius: 999,
-    background: '#e2e8f0',
-    color: '#64748b',
-    fontWeight: 700,
-    fontSize: 12
-  };
-
-  const hdrWrapStyle = {
-    padding: '10px 0 8px 0',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 6
-  };
-
-  const hdrTopRowStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8
-  };
-
-  const hdrHelloStyle = {
-    fontSize: '1.1rem',
-    fontWeight: 700,
-    color: '#1e293b',
-    display: 'flex',
-    alignItems: 'center'
-  };
-
-  const noticeChipStyle = {
-    marginLeft: 'auto',
-    fontSize: 12,
-    padding: '6px 10px',
-    borderRadius: 999,
-    background: '#fee2e2',
-    color: '#b91c1c',
-    border: '1px solid #fecaca',
-    whiteSpace: 'nowrap'
-  };
-
-  const hdrSubStyle = {
-    fontSize: '0.95rem',
-    color: '#64748b'
-  };
-
-  const hdrActionsRowStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10
-  };
-
-  const hdrSearchStyle = {
-    padding: 10,
-    borderRadius: 12,
-    border: '1px solid #e2e8f0',
-    flex: 1
-  };
-
-  const cartChipStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-    padding: '8px 12px',
-    borderRadius: 999,
-    border: '1px solid #e2e8f0',
-    background: '#fff',
-    fontWeight: 700,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap'
-  };
-
-  const cartCountPillStyle = {
-    marginLeft: 8,
-    minWidth: 22,
-    height: 22,
-    borderRadius: 999,
-    background: '#f97316',
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 800,
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '0 6px'
-  };
