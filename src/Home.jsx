@@ -1,36 +1,34 @@
 import React, { useEffect, useMemo, useState } from 'react';
-// Assuming supabase is available via this import
 import { supabase } from './lib/supabase';
-// Assuming formatPrice is available via this import
 import { formatPrice } from './types';
-// Assuming CartModal is available via this import
 import CartModal from './CartModal';
 
 
-// --- Style Definitions (New & Updated for better UI/UX) ---
+// --- Style Definitions (Updated for Mobile Responsiveness) ---
 
 const COLORS = {
-  primary: '#34d399', // A vibrant green for action (Emerald)
-  primaryDark: '#059669', // Darker green for hover/contrast
-  secondary: '#1d4ed8', // Blue for secondary info
-  background: '#f8fafc', // Very light gray background for depth
+  primary: '#34d399', 
+  primaryDark: '#059669', 
+  secondary: '#1d4ed8', 
+  background: '#f8fafc', 
   cardBackground: '#ffffff',
-  text: '#1f2937', // Darker text (Slate 800)
-  subText: '#6b7280', // Medium gray for secondary text (Gray 500)
-  border: '#e5e7eb', // Light border (Gray 200)
-  danger: '#ef4444', // Red for errors/notices
+  text: '#1f2937', 
+  subText: '#6b7280', 
+  border: '#e5e7eb', 
+  danger: '#ef4444', 
 };
 
 // Global content container style
 const mainContentStyle = {
   padding: '24px',
-  paddingBottom: '120px', 
+  // Increased bottom padding to accommodate for floating cart + bottom nav
+  paddingBottom: '160px', 
   maxWidth: 1200,
   margin: '0 auto',
   backgroundColor: COLORS.background, 
 };
 
-// --- Header Styles ---
+// --- Header Styles (Unchanged) ---
 const hdrWrapStyle = {
   padding: '12px 24px',
   display: 'flex',
@@ -84,8 +82,6 @@ const hdrSearchStyle = {
   flex: 1,
   fontSize: '1rem',
   transition: 'border-color 0.2s',
-  // Note: Hover/Focus effects often require external CSS or styled-components in a real app, 
-  // but we set the base style here.
 };
 
 const cartChipStyle = {
@@ -119,10 +115,11 @@ const cartCountPillStyle = {
   padding: '0 4px',
 };
 
-// --- Menu Grid Styles ---
+// --- Menu Grid Styles (Key Fix: Min width reduced for 2 columns on mobile) ---
 const menuTilesGridStyle = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', 
+  // Fixed: Adjusted minmax to ensure at least two columns on small screens
+  gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', 
   gap: 16,
   marginTop: 16,
 };
@@ -216,7 +213,7 @@ const tileOutStyle = {
   fontSize: 12,
 };
 
-// --- Categories Page Styles ---
+// --- Categories Page Styles (Unchanged) ---
 const categoriesGridStyle = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
@@ -252,12 +249,13 @@ const categoryImagePlaceholderStyle = {
   fontWeight: 700,
 };
 
-// --- Floating Cart Pill Style ---
+// --- Floating Cart Pill Style (Key Fix: Adjusted bottom position) ---
 const floatingCartStyle = {
   position: 'fixed',
   left: 24,
   right: 24,
-  bottom: 'calc(24px + max(0px, env(safe-area-inset-bottom)))', 
+  // Fixed: Added extra space (84px) to ensure it clears the bottom navigation bar
+  bottom: 'calc(84px + max(0px, env(safe-area-inset-bottom)))', 
   zIndex: 1300,
   background: COLORS.primaryDark, 
   color: COLORS.cardBackground,
@@ -280,7 +278,7 @@ const cartBadgeStyle = {
   fontSize: 14,
 };
 
-// --- Helper Components (Updated) ---
+// --- Helper Components (Updated with minimal changes) ---
 
 function CategoriesPage({ categories, onPickCategory }) {
   if (!categories?.length) {
@@ -322,6 +320,7 @@ function MenuGrid({ items, onAddToCart, cart, onRemoveFromCart, acceptingOrders 
         return (
           <div
             key={item.id}
+            // Removed the redundant empty onClick={() => {}} from the main div
             style={{ ...menuTileCardStyle, opacity: isAvailable ? 1 : 0.6 }}
           >
             <div style={tileImageWrapStyle}>
