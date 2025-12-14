@@ -3,8 +3,7 @@ import { supabase } from './lib/supabase';
 import { formatPrice } from './types';
 import CartModal from './CartModal';
 
-// 💰 FLAT DISCOUNT CONSTANT (Must match server)
-// const FLAT_ITEM_DISCOUNT = 5.00;
+
 
 export default function Home({ externalActiveTab = 'menu', onTabChange, setGlobalCartOpen }) {
   const profile = JSON.parse(localStorage.getItem('profile') || 'null');
@@ -17,10 +16,9 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
   const [isCartOpen, setCartOpen] = useState(false);
   const [isCheckingOut, setCheckingOut] = useState(false);
 
-  // Webhook-first: keep created order id to poll for webhook completion
+
   const [inFlightOrderId, setInFlightOrderId] = useState(localStorage.getItem('inflight_order_id') || null);
 
-  // local tab for Menu | Categories; 'orders' is handled by router
   const [activeTab, setActiveTab] = useState('menu');
 
   const [cart, setCart] = useState(() => {
@@ -35,7 +33,6 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
 
   const [acceptingOrders, setAcceptingOrders] = useState(true);
 
-  // helpers to sync global nav visibility
   const openCart = () => {
     setCartOpen(true);
     setGlobalCartOpen?.(true);
@@ -45,14 +42,12 @@ export default function Home({ externalActiveTab = 'menu', onTabChange, setGloba
     setGlobalCartOpen?.(false);
   };
 
-  // sync internal tab with global tab from router
   useEffect(() => {
     if (externalActiveTab === 'menu' || externalActiveTab === 'categories') {
       if (externalActiveTab !== activeTab) setActiveTab(externalActiveTab);
     }
   }, [externalActiveTab, activeTab]);
 
-  // Handle localStorage sync for cart and in-flight order id
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
     if (inFlightOrderId) {

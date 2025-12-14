@@ -56,7 +56,7 @@ export default function AdminOrders() {
           food_items!order_items_item_id_fkey(name)
         )
       `)
-      .order('created_at', { ascending: false }); 
+      .order('created_at', { ascending: false });
 
     if (error) {
       setError(error.message);
@@ -187,9 +187,9 @@ export default function AdminOrders() {
   return (
     <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto' }}>
       <h1 style={{ marginBottom: 24 }}>Admin - Order Management</h1>
-<button onClick={() => audioRef.current?.play()}>
-  Enable sound
-</button>
+      <button onClick={() => audioRef.current?.play()}>
+        Enable sound
+      </button>
 
       <div style={{ marginBottom: 24 }}>
         <label style={{ fontWeight: 600, marginRight: 8 }}>Accept Online Orders:</label>
@@ -243,8 +243,14 @@ export default function AdminOrders() {
             <div key={order.id} style={orderCardStyle}>
               <div style={orderHeaderStyle}>
                 <div>
-                  <span style={{ fontWeight: 700 }}>Order ID:</span>
-                  <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>{String(order.id).slice(-8)}</span>
+                  <span style={{ fontWeight: 700 }}>
+                    {order.bill_no != null ? 'Bill No:' : 'Order ID:'}
+                  </span>
+                  <span style={{ fontFamily: 'monospace', marginLeft: 8 }}>
+                    {order.bill_no != null
+                      ? order.bill_no
+                      : String(order.id).slice(-8)}
+                  </span>
                 </div>
                 <div>
                   <span style={{ fontWeight: 700 }}>User:</span>
@@ -254,15 +260,19 @@ export default function AdminOrders() {
                   {new Date(order.created_at).toLocaleString()}
                 </div>
               </div>
+
               <div style={{ padding: '12px 16px', borderTop: '1px solid #eef2f7', borderBottom: '1px solid #eef2f7' }}>
                 {(order.order_items || []).map(item => (
                   <div key={item.id} style={lineItemStyle}>
                     <span>{item.qty} x</span>
                     <span style={{ fontWeight: 600 }}>{item.food_items?.name || 'Item'}</span>
-                    <span style={{ marginLeft: 'auto' }}>{formatPrice(item.price)}</span>
+                    <span style={{ marginLeft: 'auto' }}>
+                      {formatPrice(item.price)}
+                    </span>
                   </div>
                 ))}
               </div>
+
               <div style={orderFooterStyle}>
                 <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>
                   Total: {formatPrice((order.order_items || []).reduce((sum, i) => sum + Number(i.price) * Number(i.qty), 0))}
