@@ -89,113 +89,60 @@
   border: 1px solid #ffd9a5;
 }
 
-/* Developer note wrapper */
-.dev-note {
-  margin-top: 2.5rem;
-}
-
-/* Glassmorphism-style card */
-.dev-note-card {
+.team-card {
   position: relative;
-  padding: 1.75rem 1.8rem;
-  border-radius: 18px;
-  background: radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.22), rgba(18, 18, 18, 0.82));
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px) saturate(120%);
-  -webkit-backdrop-filter: blur(14px) saturate(120%);
-  color: #f9fafb;
-  max-width: 720px;
+  overflow: hidden;
 }
 
-/* Subtle gradient accent bar at top */
-.dev-note-card::before {
-  content: "";
+.photo-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.photo-wrapper .photo {
+  transition: transform 0.4s ease;
+}
+
+.team-card:hover .photo {
+  transform: scale(1.08);
+}
+
+.social-overlay {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(135deg, #22c55e, #22d3ee, #f97316);
-  opacity: 0.35;
-  mix-blend-mode: soft-light;
-  pointer-events: none;
-}
-
-/* Inner overlay to keep text readable */
-.dev-note-card > * {
-  position: relative;
-  z-index: 1;
-}
-
-/* Label */
-.dev-note-label {
-  font-size: 0.78rem;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(226, 232, 240, 0.85);
-  margin-bottom: 0.5rem;
-}
-
-/* Title */
-.dev-note-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: #e5e7eb;
-}
-
-/* Body text */
-.dev-note-text {
-  font-size: 0.94rem;
-  line-height: 1.6;
-  color: rgba(241, 245, 249, 0.9);
-  margin-bottom: 0.4rem;
-}
-
-/* Signoff line */
-.dev-note-signoff {
-  font-size: 0.9rem;
-  margin-top: 0.6rem;
-  color: rgba(248, 250, 252, 0.95);
-}
-
-/* Footer row: team name + pill */
-.dev-note-meta {
+  background: rgba(255, 122, 89, 0.75); /* Warm accent overlay */
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.6rem;
-  margin-top: 1rem;
-  font-size: 0.86rem;
-  color: rgba(209, 213, 219, 0.95);
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-/* Small glowing pill */
-.dev-note-pill {
-  padding: 0.22rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.78rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  background: radial-gradient(circle at 0% 0%, #22c55e, #22d3ee);
-  color: #0b1120;
+.team-card:hover .social-overlay {
+  opacity: 1;
 }
 
-/* Hover lift */
-.dev-note-card:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 22px 50px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.16);
-  transition:
-    transform 160ms ease-out,
-    box-shadow 160ms ease-out;
+.linkedin-icon {
+  display: block;
+  transition: transform 0.2s ease;
 }
 
-@media (max-width: 640px) {
-  .dev-note-card {
-    padding: 1.4rem 1.3rem;
+.linkedin-icon:hover {
+  transform: scale(1.15);
+}
+
+/* Responsive adjustments */
+@media (max-width: 980px) {
+  .team-grid {
+    grid-template-columns: 1fr;
+  }
+  .photo {
+    height: 340px;
+  }
+}
+
+@media (min-width: 981px) and (max-width: 1200px) {
+  .team-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
