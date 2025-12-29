@@ -28,7 +28,7 @@ const team = [
     branch: 'B.Tech CSE · 2nd Year',
     img: souppic,
     linkedin: 'https://www.linkedin.com/in/soup-linkedin',
-    note: 'Crafts the clean, friendly interface that makes ordering feel effortless and enjoyable.',
+    note: 'Helped in marketing grabngo and promoting it all around the campus.',
   },
 ];
 
