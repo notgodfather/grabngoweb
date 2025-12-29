@@ -11,7 +11,7 @@ const team = [
     role: 'Founder & Lead Developer',
     branch: 'B.Tech CSE · 2nd Year',
     img: ankitpic,
-    linkedin: 'www.linkedin.com/in/ankitranjan77', // Replace with real LinkedIn URLs
+    linkedin: 'https://www.linkedin.com/in/ankitranjan77',
     note: 'Started GrabNGo from a real campus pain point—turned long queues into quick, reliable pickups.',
   },
   {
